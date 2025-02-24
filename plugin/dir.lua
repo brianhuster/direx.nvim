@@ -6,10 +6,11 @@ vim.g.loaded_directory_plugin = true
 
 local saved_files = {}
 
+local api = vim.api
 local edit = vim.cmd.edit
-local au = vim.api.nvim_create_autocmd
+local au = api.nvim_create_autocmd
 
-vim.api.nvim_create_augroup('FileExplorer', {
+api.nvim_create_augroup('FileExplorer', {
 	clear = true
 })
 
@@ -17,7 +18,7 @@ au({ 'VimEnter', 'BufEnter' }, {
 	group = 'FileExplorer',
 	callback = function(args)
 		if vim.fn.isdirectory(args.file) == 0 then return end
-		local buf = vim.api.nvim_get_current_buf()
+		local buf = api.nvim_get_current_buf()
 		require 'dir'.open(buf, args.file)
 	end
 })
@@ -33,21 +34,21 @@ au({ 'BufFilePost', 'ShellCmdPost' }, {
 })
 
 vim.keymap.set('n', '-', function()
-	vim.w.prev_bufname = vim.api.nvim_buf_get_name(0)
-	edit(vim.fs.dirname(vim.fs.normalize(vim.api.nvim_buf_get_name(0))))
+	vim.w.prev_bufname = api.nvim_buf_get_name(0)
+	edit(vim.fs.dirname(vim.fs.normalize(api.nvim_buf_get_name(0))))
 end, { desc = 'Open parent directory' })
 
-vim.api.nvim_create_user_command('FindFile', function(args)
-	local files = vim.fn.glob((vim.bo.ft == 'directory' and '%**/' or './**/') .. args.args, false, true)
+vim.api.nvim_create_user_command('Find', function(args)
+	local files = vim.fn.glob((vim.bo[api.nvim_win_get_buf(0)].ft == 'directory' and '%**/' or './**/') .. args.args, false, true)
 	if #files == 0 then
 		vim.notify('No files found', vim.log.levels.WARN)
 		return
 	end
-	local dir = vim.bo.ft == 'directory' and vim.api.nvim_buf_get_name(0) or vim.uv.cwd()
+	local dir = vim.bo.ft == 'directory' and api.nvim_buf_get_name(0) or vim.uv.cwd()
 	vim.fn.setloclist(0, {}, 'r', {
 		lines = vim.fn.glob((vim.bo.ft == 'directory' and '%**/' or './**/') .. args.args, false, true),
 		efm = '%f',
-		title = 'Find file from ' .. dir .. '. Pattern: ' .. args.args
+		title = 'Find ' .. args.args .. ' from ' .. dir
 	})
 	vim.cmd.lopen()
 end, { nargs = '+', desc = 'Find file <arg> in directory and its subdirectories' })

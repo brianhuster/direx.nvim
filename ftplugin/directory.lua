@@ -10,22 +10,26 @@ vim.fn.search([[\V\C]] .. vim.fn.escape(vim.w.prev_bufname, '\\'), 'cw')
 local api = vim.api
 local ns_id = vim.api.nvim_create_namespace('Directory')
 local bufnr = vim.api.nvim_get_current_buf()
+local map = vim.keymap.set
 
-local iconfunc = require('dir.config').iconfunc
-if iconfunc then
-	---@type string[]
-	---@diagnostic disable-next-line: assign-type-mismatch
-	local paths = vim.fn.getline(1, '$')
-	for i, line in ipairs(paths) do
-		local dict = iconfunc(line)
-		vim.api.nvim_buf_set_extmark(bufnr, ns_id, i - 1, 0, {
-			virt_text = { { dict.icon, dict.hl } },
-			virt_text_pos = 'inline',
-		})
+local function add_icons()
+	vim.api.nvim_buf_clear_namespace(bufnr, ns_id, 0, -1)
+	local iconfunc = require('dir.config').iconfunc
+	if iconfunc then
+		---@type string[]
+		---@diagnostic disable-next-line: assign-type-mismatch
+		local paths = vim.fn.getline(1, '$')
+		for i, line in ipairs(paths) do
+			local dict = iconfunc(line)
+			vim.api.nvim_buf_set_extmark(bufnr, ns_id, i - 1, 0, {
+				virt_text = { { dict.icon, dict.hl } },
+				virt_text_pos = 'inline',
+			})
+		end
 	end
 end
 
-local map = vim.keymap.set
+add_icons()
 
 map('n', 'grn', function()
 	require 'dir'.rename()
@@ -56,4 +60,34 @@ map('n', '!', function()
 	feedkeys(path .. '<C-b>!')
 end, {})
 
-vim.b.undo_ftplugin = "setl conceallevel< concealcursor<"
+api.nvim_create_user_command('Shdo', function(args)
+	local lines = args.range > 0 and api.nvim_buf_get_lines(0, args.line1 - 1, args.line2, false) or nil
+	require 'dir'.shdo(args.args, vim.fs.abspath(api.nvim_buf_get_name(0)), lines)
+end, {
+	range = true,
+	nargs = '?',
+	complete = 'shellcmd',
+	desc = 'Execute shell command with optional range and arguments'
+})
+
+local augroup = vim.api.nvim_create_augroup('ft-directory', { clear = true })
+
+vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
+	buffer = bufnr,
+	group = augroup,
+	callback = function()
+		add_icons()
+	end
+})
+
+vim.cmd [[
+func! s:undo_ft_directory()
+	setl conceallevel< concealcursor< bufhidden< buftype< swapfile<
+	silent! nunmap grn K <Del> <CR> <2-LeftMouse> !
+	silent! xunmap <Del>
+	augroup ft-directory
+		au!
+	augroup END
+endf
+let b:undo_ftplugin = 'call ' . expand('<SID>') . 'undo_ft_directory()'
+]]

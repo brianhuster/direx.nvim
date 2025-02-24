@@ -1,7 +1,9 @@
 local M = {}
 local api = vim.api
-local fs = vim.fs
 local ws = require('dir.lsp').workspace
+
+---@type { type: 'copy'|'move', paths: string[] }
+local pending_operations = {}
 
 ---@return string[]
 local function get_visual_lines()
@@ -22,7 +24,7 @@ end
 ---@param bufnr number
 function M.open(bufnr, dir)
 	vim.validate('path', dir, 'string')
-	dir = fs.abspath(dir)
+	dir = vim.fs.abspath(dir)
 	if dir:sub(-1) ~= '/' then
 		dir = dir .. '/'
 	end
@@ -59,54 +61,14 @@ end
 
 --- Use for `K` mapping
 function M.keywordexpr()
-	---@param mode number
-	---@return string
-	local function mode_to_human_readable(mode)
-		local bit = require('bit')
-		local types = {
-			[0xC000] = 's', -- socket
-			[0xA000] = 'l', -- symbolic link
-			[0x8000] = '-', -- regular file
-			[0x6000] = 'b', -- block device
-			[0x4000] = 'd', -- directory
-			[0x2000] = 'c', -- character device
-			[0x1000] = 'p', -- FIFO
-		}
-		local permissions = {
-			[0] = '---',
-			[1] = '--x',
-			[2] = '-w-',
-			[3] = '-wx',
-			[4] = 'r--',
-			[5] = 'r-x',
-			[6] = 'rw-',
-			[7] = 'rwx',
-		}
-		local file_type = types[bit.band(mode, 0xF000)] or '?'
-		local owner_perms = permissions[bit.rshift(bit.band(mode, 0x01C0), 6)]
-		local group_perms = permissions[bit.rshift(bit.band(mode, 0x0038), 3)]
-		local other_perms = permissions[bit.band(mode, 0x0007)]
-		return file_type .. owner_perms .. group_perms .. other_perms
-	end
-
-	local function bytes_to_human_readable(bytes)
-		local units = { "B", "KB", "MB", "GB", "TB" }
-		local scale = 1024
-		local unit_index = 1
-		while bytes >= scale and unit_index < #units do
-			bytes = bytes / scale
-			unit_index = unit_index + 1
-		end
-		return string.format("%.2f%s", bytes, units[unit_index])
-	end
-
+	local fs = require 'dir.fs'
 	local path = api.nvim_get_current_line()
 	local stat = vim.uv.fs_stat(path)
 	if not stat then
 		return
 	end
-	local mode = mode_to_human_readable(stat.mode)
-	local size = bytes_to_human_readable(stat.size)
+	local mode = fs.inspect_mode(stat.mode)
+	local size = fs.inspect_bytes(stat.size)
 	local type = stat.type
 	local function date(sec)
 		return os.date('%Y-%m-%d %H:%M:%S', sec)
@@ -150,6 +112,25 @@ function M.remove()
 	end
 	ws.didDeleteFiles(did_delete_files)
 	vim.cmd.edit()
+end
+
+---@param fmt string
+---@param dir string
+---@param items string[]
+function M.shdo(fmt, dir, items)
+	vim.cmd.new()
+	vim.cmd.lcd({ args = { dir }, mods = { silent = true } })
+	vim.fn.setline(1, '#!' .. vim.o.shell)
+	vim.fn.setline(2, 'cd ' .. vim.fn.shellescape(vim.fn.getcwd()))
+
+	items = items or vim.fn.argv()
+	for _, item in ipairs(items) do
+		local line = fmt:gsub('{([^}]*)}', function(mod)
+			return vim.fn.fnamemodify(item, mod:sub(2, -2))
+		end)
+		vim.fn.append(vim.fn.line('$'), line)
+	end
+	vim.cmd.filetype 'detect'
 end
 
 return M
