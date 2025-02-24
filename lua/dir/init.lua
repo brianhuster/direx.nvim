@@ -3,6 +3,7 @@ local api = vim.api
 local fs = vim.fs
 local ws = require('dir.lsp').workspace
 
+---@return string[]
 local function get_visual_lines()
 	local line_start = api.nvim_buf_get_mark(0, "<")[1]
 	local line_end = api.nvim_buf_get_mark(0, ">")[1]
@@ -41,7 +42,7 @@ function M.open(bufnr, dir)
 end
 
 function M.rename()
-	local oldname = vim.fn.getline('.')
+	local oldname = api.nvim_get_current_line()
 	local newname = vim.fn.input('Rename to ', oldname, 'file')
 	if oldname == newname or #newname == 0 then
 		return
@@ -99,7 +100,7 @@ function M.keywordexpr()
 		return string.format("%.2f%s", bytes, units[unit_index])
 	end
 
-	local path = vim.fn.getline('.')
+	local path = api.nvim_get_current_line()
 	local stat = vim.uv.fs_stat(path)
 	if not stat then
 		return
@@ -120,12 +121,11 @@ function M.keywordexpr()
 end
 
 function M.remove()
-	-- get current mode
 	---@type string[]
 	local paths = {}
 	local mode = api.nvim_get_mode().mode
 	if mode == 'n' then
-		paths = { vim.fn.getline('.') }
+		paths = { api.nvim_get_current_line() }
 	else
 		paths = get_visual_lines()
 	end

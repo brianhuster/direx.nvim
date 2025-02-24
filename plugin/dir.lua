@@ -37,6 +37,21 @@ vim.keymap.set('n', '-', function()
 	edit(vim.fs.dirname(vim.fs.normalize(vim.api.nvim_buf_get_name(0))))
 end, { desc = 'Open parent directory' })
 
+vim.api.nvim_create_user_command('FindFile', function(args)
+	local files = vim.fn.glob((vim.bo.ft == 'directory' and '%**/' or './**/') .. args.args, false, true)
+	if #files == 0 then
+		vim.notify('No files found', vim.log.levels.WARN)
+		return
+	end
+	local dir = vim.bo.ft == 'directory' and vim.api.nvim_buf_get_name(0) or vim.uv.cwd()
+	vim.fn.setloclist(0, {}, 'r', {
+		lines = vim.fn.glob((vim.bo.ft == 'directory' and '%**/' or './**/') .. args.args, false, true),
+		efm = '%f',
+		title = 'Find file from ' .. dir .. '. Pattern: ' .. args.args
+	})
+	vim.cmd.lopen()
+end, { nargs = '+', desc = 'Find file <arg> in directory and its subdirectories' })
+
 au('FileWritePre', {
 	group = 'FileExplorer',
 	callback = function(args)

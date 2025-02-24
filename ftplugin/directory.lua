@@ -27,11 +27,6 @@ end
 
 local map = vim.keymap.set
 
-local function feedkeys(key)
-	local key = api.nvim_replace_termcodes(key, true, true, true)
-	api.nvim_feedkeys(key, 'n', true)
-end
-
 map('n', 'grn', function()
 	require 'dir'.rename()
 end, { desc = 'Rename path under cursor', buffer = true })
@@ -39,7 +34,7 @@ end, { desc = 'Rename path under cursor', buffer = true })
 
 for _, key in ipairs { '<CR>', '<2-LeftMouse>' } do
 	map('n', key, function()
-		vim.cmd.edit(vim.fn.getline('.'))
+		vim.cmd.edit(api.nvim_get_current_line())
 	end, { desc = 'Open path under cursor', buffer = true })
 end
 
@@ -52,14 +47,13 @@ map({ 'n', 'x' }, '<Del>', function()
 end, { desc = 'Remove files/folders under cursor or selected in visual mode', buffer = true })
 
 map('n', '!', function()
+	local function feedkeys(key)
+		api.nvim_feedkeys(vim.keycode(key), 'n', true)
+	end
+
 	feedkeys(':<C-U><Space>')
-	local path = vim.fn.shellescape(vim.fn.getline('.'), true)
+	local path = vim.fn.shellescape(api.nvim_get_current_line(), true)
 	feedkeys(path .. '<C-b>!')
 end, {})
-
-vim.api.nvim_buf_create_user_command(0, 'FindFile', function(args)
-	vim.fn.setloclist(0, {}, 'r', { lines = vim.fn.glob('%**/' .. args.args, false, true) })
-	vim.cmd.lopen()
-end, { nargs = '+', desc = 'Find file <arg> in directory and its subdirectories' })
 
 vim.b.undo_ftplugin = "setl conceallevel< concealcursor<"
