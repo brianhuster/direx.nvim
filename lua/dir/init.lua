@@ -33,8 +33,9 @@ function M.open(bufnr, dir)
 
 	vim.api.nvim_buf_set_name(bufnr, dir)
 
-	local paths = vim.fn.glob(dir .. '*', true, true, true)
+	local paths = vim.fn.readdir(dir)
 	paths = vim.tbl_map(function(p)
+		p = dir .. p
 		if vim.fn.isdirectory(p) == 1 then
 			return p .. '/'
 		end
@@ -146,14 +147,15 @@ function M.remove()
 		paths = { vim.fn.getline('.') }
 	else
 		paths = get_visual_lines()
-		local confirm = vim.fn.confirm(
-			'Are you sure you want to delete these files?\n' .. table.concat(paths, '\n'),
-			'&Yes\n&No',
-			2)
-		if confirm ~= 1 then
-			return
-		end
 	end
+	local confirm = vim.fn.confirm(
+		'Are you sure you want to delete these files?\n' .. table.concat(paths, '\n'),
+		'&Yes\n&No',
+		2)
+	if confirm ~= 1 then
+		return
+	end
+
 	local will_delete_files = vim.tbl_map(function(v)
 		return { v }
 	end, paths)
