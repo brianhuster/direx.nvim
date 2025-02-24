@@ -33,6 +33,7 @@ au({ 'BufFilePost', 'ShellCmdPost' }, {
 })
 
 vim.keymap.set('n', '-', function()
+	vim.w.prev_bufname = vim.api.nvim_buf_get_name(0)
 	edit(vim.fs.dirname(vim.fs.normalize(vim.api.nvim_buf_get_name(0))))
 end, { desc = 'Open parent directory' })
 

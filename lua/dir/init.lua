@@ -1,11 +1,6 @@
 local M = {}
 local api = vim.api
-local ns_id = vim.api.nvim_create_namespace('Directory')
 local fs = vim.fs
-
----@type function?
-M.add_icons = nil
-
 local ws = require('dir.lsp').workspace
 
 local function get_visual_lines()
@@ -42,15 +37,6 @@ function M.open(bufnr, dir)
 		return p
 	end, paths)
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, paths)
-	if M.add_icons then
-		for i, line in ipairs(paths) do
-			local dict = M.add_icons(line)
-			api.nvim_buf_set_extmark(bufnr, ns_id, i - 1, 0, {
-				virt_text = { { dict.icon, dict.hl } },
-				virt_text_pos = 'inline',
-			})
-		end
-	end
 	vim.bo[bufnr].filetype = 'directory'
 end
 
@@ -70,54 +56,49 @@ function M.rename()
 	vim.cmd.edit()
 end
 
----@param mode number
----@return string
-local function mode_to_human_readable(mode)
-	local bit = require('bit')
-	local types = {
-		[0xC000] = 's', -- socket
-		[0xA000] = 'l', -- symbolic link
-		[0x8000] = '-', -- regular file
-		[0x6000] = 'b', -- block device
-		[0x4000] = 'd', -- directory
-		[0x2000] = 'c', -- character device
-		[0x1000] = 'p', -- FIFO
-	}
-
-	local permissions = {
-		[0] = '---',
-		[1] = '--x',
-		[2] = '-w-',
-		[3] = '-wx',
-		[4] = 'r--',
-		[5] = 'r-x',
-		[6] = 'rw-',
-		[7] = 'rwx',
-	}
-
-	local file_type = types[bit.band(mode, 0xF000)] or '?'
-	local owner_perms = permissions[bit.rshift(bit.band(mode, 0x01C0), 6)]
-	local group_perms = permissions[bit.rshift(bit.band(mode, 0x0038), 3)]
-	local other_perms = permissions[bit.band(mode, 0x0007)]
-
-	return file_type .. owner_perms .. group_perms .. other_perms
-end
-
-local function bytes_to_human_readable(bytes)
-	local units = { "B", "KB", "MB", "GB", "TB" }
-	local scale = 1024
-	local unit_index = 1
-
-	while bytes >= scale and unit_index < #units do
-		bytes = bytes / scale
-		unit_index = unit_index + 1
-	end
-
-	return string.format("%.2f %s", bytes, units[unit_index])
-end
-
 --- Use for `K` mapping
 function M.keywordexpr()
+	---@param mode number
+	---@return string
+	local function mode_to_human_readable(mode)
+		local bit = require('bit')
+		local types = {
+			[0xC000] = 's', -- socket
+			[0xA000] = 'l', -- symbolic link
+			[0x8000] = '-', -- regular file
+			[0x6000] = 'b', -- block device
+			[0x4000] = 'd', -- directory
+			[0x2000] = 'c', -- character device
+			[0x1000] = 'p', -- FIFO
+		}
+		local permissions = {
+			[0] = '---',
+			[1] = '--x',
+			[2] = '-w-',
+			[3] = '-wx',
+			[4] = 'r--',
+			[5] = 'r-x',
+			[6] = 'rw-',
+			[7] = 'rwx',
+		}
+		local file_type = types[bit.band(mode, 0xF000)] or '?'
+		local owner_perms = permissions[bit.rshift(bit.band(mode, 0x01C0), 6)]
+		local group_perms = permissions[bit.rshift(bit.band(mode, 0x0038), 3)]
+		local other_perms = permissions[bit.band(mode, 0x0007)]
+		return file_type .. owner_perms .. group_perms .. other_perms
+	end
+
+	local function bytes_to_human_readable(bytes)
+		local units = { "B", "KB", "MB", "GB", "TB" }
+		local scale = 1024
+		local unit_index = 1
+		while bytes >= scale and unit_index < #units do
+			bytes = bytes / scale
+			unit_index = unit_index + 1
+		end
+		return string.format("%.2f%s", bytes, units[unit_index])
+	end
+
 	local path = vim.fn.getline('.')
 	local stat = vim.uv.fs_stat(path)
 	if not stat then
