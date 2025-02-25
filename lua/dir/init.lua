@@ -1,7 +1,7 @@
 local M = {}
 local api = vim.api
 local ws = require('dir.lsp').workspace
-local fs = require('dir.fs')
+local dirfs = require('dir.fs')
 
 ---@type { type: 'copy'|'move', paths: string[] }
 M.pending_operations = {}
@@ -56,7 +56,7 @@ function M.rename()
 		return
 	end
 	ws.willRenameFiles { { oldname, newname } }
-	local success = require('dir.fs').rename(oldname, newname)
+	local success = dirfs.rename(oldname, newname)
 	if not success then return end
 	ws.didRenameFiles { { oldname, newname } }
 	vim.cmd.edit()
@@ -64,14 +64,13 @@ end
 
 --- Use for `K` mapping
 function M.hover()
-	local fs = require 'dir.fs'
 	local path = api.nvim_get_current_line()
 	local stat = vim.uv.fs_stat(path)
 	if not stat then
 		return
 	end
-	local mode = fs.inspect_mode(stat.mode)
-	local size = fs.inspect_bytes(stat.size)
+	local mode = dirfs.inspect_mode(stat.mode)
+	local size = dirfs.inspect_bytes(stat.size)
 	local type = stat.type
 	local function date(sec)
 		return os.date('%Y-%m-%d %H:%M:%S', sec)
@@ -108,7 +107,7 @@ function M.remove()
 	ws.willDeleteFiles(will_delete_files)
 	local did_delete_files = {}
 	for _, path in ipairs(paths) do
-		local success = require('dir.fs').remove(path)
+		local success = dirfs.remove(path)
 		if success then
 			table.insert(did_delete_files, { path })
 		end
@@ -139,12 +138,8 @@ end
 ---@param path string
 function M.preview(path)
 	if path:sub(-1) == '/' then
-		local initial_text = 'a'
-		for i = 1, 50 do
-			initial_text = initial_text .. 'a'
-		end
 		local buf, _ = vim.lsp.util.open_floating_preview(
-			{ initial_text }, 'directory',
+			{ ' ' }, 'directory',
 			{ border = 'rounded', width = 50, height = 20 })
 		vim.bo[buf].modifiable = true
 		M.open(buf, path)
@@ -177,11 +172,27 @@ end
 
 function M.paste()
 	local newpath ---@type string?
-	local targets = M.pending_operations.paths
-	if M.pending_operations.type == 'copy' then
-		local new_dir = api.nvim_get_buf_name(0)
-		for _, target in ipairs(targets) do
-			---@diagnostic disable-next-line: param-type-mismatch
+	local oldpaths = M.pending_operations.paths
+	local type = M.pending_operations.type
+	local new_dir = api.nvim_get_buf_name(0)
+	M.pending_operations.paths = {}
+	if type == 'copy' then
+		for _, target in ipairs(oldpaths) do
+			local newpath = vim.fs.joinpath(new_dir, dirfs.basename(target))
+			local success = dirfs.copy(target, newpath)
+			if not success then
+				vim.notify(string.format("Failed to copy %s", target), vim.log.levels.ERROR)
+				return
+			end
+		end
+	elseif type == 'move' then
+		for _, target in ipairs(oldpaths) do
+			local newpath = vim.fs.joinpath(new_dir, dirfs.basename(target))
+			local success = dirfs.rename(target, newpath)
+			if not success then
+				vim.notify(string.format("Failed to move %s", target), vim.log.levels.ERROR)
+				return
+			end
 		end
 	end
 	vim.cmd.edit()

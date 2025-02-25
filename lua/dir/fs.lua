@@ -3,7 +3,7 @@ local M = {}
 local uv = vim.uv
 local fs = vim.fs
 
-local function basename(path)
+function M.basename(path)
 	return vim.fs.basename(path:sub(-1) == '/' and path:sub(1, -2) or path)
 end
 
@@ -59,7 +59,7 @@ end
 
 ---@param oldpath string
 ---@param newpath string
----@return boolean?
+---@return boolean
 function M.copylink(oldpath, newpath)
 	local target = uv.fs_readlink(oldpath)
 	if target then
@@ -68,21 +68,23 @@ function M.copylink(oldpath, newpath)
 			return vim.v.shell_error == 0
 		end
 		local success, errname, errmsg = uv.fs_symlink(target, newpath)
-		return success
+		return not not success
 	end
 end
 
-function M.copy(oldpath, newdir)
+---@param oldpath string
+---@param newpath string
+---@return boolean
+function M.copy(oldpath, newpath)
+	---@diagnostic disable-next-line: param-type-mismatch
 	local stat = vim.uv.fs_lstat(oldpath)
 	local type = stat and stat.type
-	local joinpath = vim.fs.joinpath
-	local newpath = joinpath(newdir, basename(oldpath))
 	if type == 'directory' then
-		require('dir.fs').copydir(oldpath, newpath)
+		return M.copydir(oldpath, newpath)
 	elseif type == 'file' then
-		require('dir.fs').copyfile(oldpath, newpath)
+		return M.copyfile(oldpath, newpath)
 	elseif type == 'link' then
-		require('dir.fs').copyfile(oldpath, newpath)
+		return M.copylink(oldpath, newpath)
 	end
 end
 
@@ -92,7 +94,7 @@ end
 function M.rename(oldname, newname)
 	local success, err, errname = vim.uv.fs_rename(oldname, newname)
 	if not success then
-		success = M.copy(oldname, vim.fs.dirname(newname:sub(-1) == '/' and newname:sub(1, -2) or newname))
+		success = M.copy(oldname, newname)
 		if success then
 			return M.remove(oldname)
 		else
@@ -105,13 +107,7 @@ end
 ---@param path string
 ---@return boolean
 function M.remove(path)
-	local success = false
-	if vim.fn.isdirectory(path) == 1 then
-		success = vim.fn.delete(path, 'rf') == 0
-	else
-		success = vim.fn.delete(path) == 0
-	end
-	return success
+	return vim.fn.isdirectory(path) == 1 and vim.fn.delete(path, 'rf') == 0 or vim.fn.delete(path) == 0
 end
 
 ---@param mode number
@@ -163,7 +159,7 @@ end
 ---@return boolean
 function M.trash(path)
 	local time = os.date('%Y-%m-%dT%H-%M-%S')
-	local file_name = basename(path) .. '_' .. time
+	local file_name = M.basename(path) .. '_' .. time
 	if vim.fn.has('win32') == 1 then
 		return false
 	end
@@ -192,5 +188,7 @@ function M.trash(path)
 	uv.fs_close(trashinfo_file)
 	return M.rename(path, trashfiles_dir .. '/' .. file_name)
 end
+
+M.trash('/media/brianhuster/D/test thoi.lua')
 
 return M

@@ -2,9 +2,9 @@ local M = {}
 
 ---@class DirConfigOpts
 ---@field iconfunc? function
-
----@type function?
-M.iconfunc = nil
+---@field keymaps? DirConfigKeymaps
+---@field trash? { delete_after: number }
+---@field set nil
 
 ---@class DirConfigKeymaps
 ---@field mkfile string?
@@ -26,10 +26,7 @@ M.keymaps = {
 	remove = '<Del>',
 }
 
----@param opts {
----iconfunc: function?,
----keymaps: table?,
----set: nil }
+---@param opts DirConfigOpts
 M.set = function(opts)
 	assert(opts.set == nil)
 	package.loaded['dir.config'] = vim.tbl_deep_extend('force', package.loaded['dir.config'], opts)
