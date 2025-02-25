@@ -54,9 +54,11 @@ map({ 'n', 'x' }, config.keymaps.remove, function()
 	require 'dir'.remove()
 end, { desc = 'Remove files/folders under cursor or selected in visual mode' })
 
-map({ 'n', 'x' }, config.keymaps.trash, function()
-	require 'dir'.remove({ trash = true })
-end, { desc = 'Trash files/folders under cursor or selected in visual mode' })
+if config.keymaps.trash then
+	map({ 'n', 'x' }, config.keymaps.trash, function()
+		require 'dir'.remove({ trash = true })
+	end, { desc = 'Trash files/folders under cursor or selected in visual mode' })
+end
 
 map('n', '!', function()
 	local function feedkeys(key)

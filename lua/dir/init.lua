@@ -1,6 +1,6 @@
 local M = {}
 local api = vim.api
-local ws = require('dir.lsp').workspace
+local ws = require 'dir.lsp'.workspace
 ---@module 'dir.fs'
 local dirfs = setmetatable({}, { __index = function(_, k) return require('dir.fs')[k] end })
 
@@ -99,7 +99,8 @@ function M.remove(opts)
 		opts = {}
 	end
 	local confirm = vim.fn.confirm(
-		'Are you sure you want to ' .. (opts.trash and 'trash' or 'delete') .. ' these files?\n' .. table.concat(paths, '\n'),
+		'Are you sure you want to ' ..
+		(opts.trash and 'trash' or 'delete') .. ' these files?\n' .. table.concat(paths, '\n'),
 		'&Yes\n&No',
 		2)
 	if confirm ~= 1 then
@@ -119,41 +120,6 @@ function M.remove(opts)
 	end
 	ws.didDeleteFiles(did_delete_files)
 	vim.cmd.edit()
-end
-
-function M.trash()
-	local paths = {}
-	local mode = api.nvim_get_mode().mode
-	if mode == 'n' then
-		paths = { api.nvim_get_current_line() }
-	else
-		paths = get_visual_selected_lines()
-	end
-	local confirm = vim.fn.confirm(
-		'Are you sure you want to trash these files?\n' .. table.concat(paths, '\n'),
-		'&Yes\n&No',
-		2)
-	if confirm ~= 1 then
-		return
-	end
-
-	local will_delete_files = vim.tbl_map(function(v)
-		return { v }
-	end, paths)
-	ws.willDeleteFiles(will_delete_files)
-	local did_delete_files = {}
-	for _, path in ipairs(paths) do
-		local success = dirfs.trash(path)
-		if success then
-			table.insert(did_delete_files, { path })
-		end
-	end
-	ws.didDeleteFiles(did_delete_files)
-	vim.cmd.edit()
-end
-	end
-	)
-	end
 end
 
 ---@param fmt string
