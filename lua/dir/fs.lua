@@ -56,6 +56,14 @@ function M.copylink(oldpath, newpath)
 	end
 end
 
+function M.rename(oldname, newname)
+	local success, err, errname = vim.uv.fs_rename(oldname, newname)
+	if not success then
+		vim.notify(err .. ' ' .. errname, vim.log.levels.ERROR)
+		return
+	end
+end
+
 ---@param mode number
 ---@return string
 function M.inspect_mode(mode)

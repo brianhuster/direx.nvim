@@ -1,6 +1,7 @@
 local M = {}
 local api = vim.api
 local ws = require('dir.lsp').workspace
+local fs = require('dir.fs')
 
 ---@type { type: 'copy'|'move', paths: string[] }
 local pending_operations = {}
@@ -18,6 +19,11 @@ local function get_visual_lines()
 	local lines = api.nvim_buf_get_lines(0, line_start - 1, line_end, false)
 
 	return lines
+end
+
+---@param target string
+local function moveCursorTo(target)
+	vim.fn.search('\\V' .. vim.fn.escape(target, '\\') .. '\\$')
 end
 
 ---@param dir string
@@ -50,11 +56,8 @@ function M.rename()
 		return
 	end
 	ws.willRenameFiles { { oldname, newname } }
-	local success, err, errname = vim.uv.fs_rename(oldname, newname)
-	if not success then
-		vim.notify(err .. ' ' .. errname, vim.log.levels.ERROR)
-		return
-	end
+	local success = require('dir.fs').rename(oldname, newname)
+	if not success then return end
 	ws.didRenameFiles { { oldname, newname } }
 	vim.cmd.edit()
 end
@@ -126,11 +129,106 @@ function M.shdo(fmt, dir, items)
 	items = items or vim.fn.argv()
 	for _, item in ipairs(items) do
 		local line = fmt:gsub('{([^}]*)}', function(mod)
-			return vim.fn.fnamemodify(item, mod:sub(2, -2))
+			return vim.fn.fnamemodify(item, mod:sub(2))
 		end)
 		vim.fn.append(vim.fn.line('$'), line)
 	end
 	vim.cmd.filetype 'detect'
+end
+
+function M.preview(path)
+	if path:sub(-1) == '/' then
+		local buf, _ = vim.lsp.util.open_floating_preview(
+			{ ' ' }, 'directory',
+			{ border = 'rounded', width = 50, height = 20 })
+		vim.bo[buf].modifiable = true
+		M.open(buf, path)
+	else
+		vim.lsp.util.open_floating_preview(vim.fn.readfile(path, '', 20),
+			vim.filetype.match({ filename = path }) or 'text',
+			{ border = 'rounded', max_width = 50, max_height = 20 })
+	end
+end
+
+function M.copy()
+	local lines = get_visual_lines()
+	pending_operations = {
+		type = 'copy',
+		paths = lines,
+	}
+	vim.notify('Copied ' .. #lines .. ' files')
+end
+
+function M.move()
+	local lines = get_visual_lines()
+	pending_operations = {
+		type = 'move',
+		paths = lines,
+	}
+	vim.notify('Cut ' .. #lines .. ' files')
+end
+
+function M.paste()
+	local newpath ---@type string?
+	local targets = pending_operations.paths
+	if pending_operations.type == 'copy' then
+		local new_dir = api.nvim_get_buf_name(0)
+		for _, target in ipairs(targets) do
+			---@diagnostic disable-next-line: param-type-mismatch
+			local stat = vim.uv.fs_lstat(target)
+			local type = stat and stat.type
+			local joinpath, basename = vim.fs.joinpath, vim.fs.basename
+			if type == 'directory' then
+				newpath = joinpath(new_dir, basename(target:sub(1, -2)))
+				require('dir.fs').copydir(target, newpath)
+			elseif type == 'file' then
+				newpath = joinpath(new_dir, basename(target))
+				require('dir.fs').copyfile(target, newpath)
+			elseif type == 'link' then
+				newpath = joinpath(new_dir, basename(target))
+				require('dir.fs').copyfile(target, newpath)
+			end
+		end
+	end
+	vim.cmd.edit()
+	if newpath then
+		moveCursorTo(newpath)
+	end
+end
+
+M.editfile = function()
+	local filename = vim.fn.input('Enter filename: ', '', 'file')
+	filename = vim.trim(filename)
+	if #filename == 0 then
+		return
+	end
+	local dirname = fs.dirname(filename)
+	if vim.fn.isdirectory(dirname) == 0 then
+		fs.mkdir(dirname)
+	end
+	if vim.fn.isdirectory(dirname) == 1 then
+		vim.cmd.edit("%" .. filename)
+	end
+end
+
+M.mkdir = function()
+	local dirname = vim.fn.input('Directory name : ', '', 'file')
+	dirname = vim.trim(dirname)
+	if #dirname == 0 then
+		return
+	end
+	ws.willCreateFiles(dirname)
+	local dirpath = vim.fs.joinpath(api.nvim_buf_get_name(0), dirname)
+	local success = fs.mkdir(dirpath)
+	if not success then
+		vim.notify(
+			("Failed to create %s"):format(dirpath),
+			vim.log.levels.ERROR)
+	else
+		vim.cmd.edit(dirpath)
+		moveCursorTo(dirname .. '/')
+		ws.didCreateFiles(dirpath)
+	end
 end
 
 return M
