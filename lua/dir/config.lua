@@ -14,6 +14,7 @@ local M = {}
 ---@field copy string?
 ---@field move string?
 ---@field paste string?
+---@field trash string?
 ---@field preview string?
 ---@field hover string?
 ---@field argadd string?

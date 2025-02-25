@@ -158,13 +158,14 @@ end
 ---@param path string
 ---@return boolean
 function M.trash(path)
-	path = path:sub(-1) == '/' and path:sub(1, -2) or path
-	local time = os.date('%Y-%m-%dT%H-%M-%S')
-	local file_name = M.basename(path) .. '_' .. time
-	local escaped = vim.uri_from_fname(path)
 	if vim.fn.has('win32') == 1 then
 		return false
 	end
+
+	path = path:sub(-1) == '/' and path:sub(1, -2) or path
+	local time = os.date('%Y-%m-%dT%H-%M-%S')
+	local file_name = M.basename(path) .. '_' .. time
+	local escaped = vim.uri_from_fname(path):sub(#'file://' + 1)
 	local trash = os.getenv('HOME') .. '/.local/share/Trash'
 	local trashfiles_dir = trash .. '/files'
 	local trashinfo_dir = trash .. '/info'
@@ -185,18 +186,23 @@ function M.trash(path)
 		return false
 	end
 	local trashinfo = ('[Trash Info]\nPath=%s\nDeletionDate=%s'):format(
-		vim.uri_from_fname(path):sub(#"file://" + 1),
+		escaped,
 		os.date('%Y-%m-%dT%H:%M:%S'))
 	uv.fs_write(trashinfo_file, trashinfo, -1)
 	uv.fs_close(trashinfo_file)
 
 	-- Update directorysizes
-	if vim.fn.isdirectory(path) then
+	if vim.fn.isdirectory(path) == 1 then
 		local dirsize = uv.fs_stat(path).size
 		local mtime = vim.fn.getftime(trashinfo_fname)
 		local tempfile = vim.fn.tempname()
 		local dirsizes_fname = trash .. '/directorysizes'
-		vim.fn.filecopy(dirsizes_fname, tempfile)
+		if vim.fn.filereadable(dirsizes_fname) == 1 then
+			if vim.fn.filecopy(dirsizes_fname, tempfile) == 0 then
+				vim.notify('Can\'t copy ' .. dirsizes_fname .. ' to ' .. tempfile)
+				return false
+			end
+		end
 		local dirsizes = vim.fn.readfile(tempfile)
 		local has_path = false
 		for i, v in ipairs(dirsizes) do
@@ -217,11 +223,8 @@ function M.trash(path)
 			vim.notify('Can\'t copy ' .. tempfile .. ' to ' .. dirsizes_fname)
 			return false
 		end
-		print(dirsizes_fname)
 	end
 	return M.rename(path, trashfiles_dir .. '/' .. file_name)
 end
-
-M.trash('/media/brianhuster/D/Dir/')
 
 return M
