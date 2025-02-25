@@ -1,7 +1,8 @@
 local M = {}
 local api = vim.api
 local ws = require('dir.lsp').workspace
-local dirfs = require('dir.fs')
+---@module 'dir.fs'
+local dirfs = setmetatable({}, { __index = function(_, k) return require('dir.fs')[k] end })
 
 ---@type { type: 'copy'|'move', paths: string[] }
 M.pending_operations = {}

@@ -158,8 +158,10 @@ end
 ---@param path string
 ---@return boolean
 function M.trash(path)
+	path = path:sub(-1) == '/' and path:sub(1, -2) or path
 	local time = os.date('%Y-%m-%dT%H-%M-%S')
 	local file_name = M.basename(path) .. '_' .. time
+	local escaped = vim.uri_from_fname(path)
 	if vim.fn.has('win32') == 1 then
 		return false
 	end
@@ -176,7 +178,8 @@ function M.trash(path)
 		end
 	end
 	-- Create and write the trashinfo file
-	local trashinfo_file = uv.fs_open(trashinfo_dir .. '/' .. file_name .. '.trashinfo', 'w', 438)
+	local trashinfo_fname = trashinfo_dir .. '/' .. file_name .. '.trashinfo'
+	local trashinfo_file = uv.fs_open(trashinfo_fname, 'w', 438)
 	if not trashinfo_file then
 		vim.notify(string.format("Failed to create %s", file_name), vim.log.levels.ERROR)
 		return false
@@ -186,9 +189,39 @@ function M.trash(path)
 		os.date('%Y-%m-%dT%H:%M:%S'))
 	uv.fs_write(trashinfo_file, trashinfo, -1)
 	uv.fs_close(trashinfo_file)
+
+	-- Update directorysizes
+	if vim.fn.isdirectory(path) then
+		local dirsize = uv.fs_stat(path).size
+		local mtime = vim.fn.getftime(trashinfo_fname)
+		local tempfile = vim.fn.tempname()
+		local dirsizes_fname = trash .. '/directorysizes'
+		vim.fn.filecopy(dirsizes_fname, tempfile)
+		local dirsizes = vim.fn.readfile(tempfile)
+		local has_path = false
+		for i, v in ipairs(dirsizes) do
+			if v:sub(- #escaped) == escaped then
+				dirsizes[i] = dirsize .. ' ' .. mtime .. ' ' .. escaped
+				has_path = true
+				break
+			end
+		end
+		if not has_path then
+			table.insert(dirsizes, dirsize .. ' ' .. mtime .. ' ' .. escaped)
+		end
+		if vim.fn.writefile(dirsizes, tempfile) ~= 0 then
+			vim.notify("Can't write to " .. tempfile)
+			return false
+		end
+		if not uv.fs_copyfile(tempfile, dirsizes_fname) then
+			vim.notify('Can\'t copy ' .. tempfile .. ' to ' .. dirsizes_fname)
+			return false
+		end
+		print(dirsizes_fname)
+	end
 	return M.rename(path, trashfiles_dir .. '/' .. file_name)
 end
 
-M.trash('/media/brianhuster/D/test thoi.lua')
+M.trash('/media/brianhuster/D/Dir/')
 
 return M
