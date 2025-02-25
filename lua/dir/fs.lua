@@ -5,28 +5,31 @@ local fs = vim.fs
 
 ---@param file string
 ---@param newpath string
+---@return boolean
 function M.copyfile(file, newpath)
 	local success, errname, errmsg = uv.fs_copyfile(file, newpath)
 	if not success then
 		vim.notify(string.format("%s: %s", errname, errmsg), vim.log.levels.ERROR)
 	end
-	return success
+	return not not success
 end
 
 -- Copy dir recursively
 ---@param dir string
 ---@param newpath string
+---@return boolean
 function M.copydir(dir, newpath)
 	local handle = uv.fs_scandir(dir)
 	if not handle then
-		return
+		return false
 	end
 	local success, errname, errmsg = uv.fs_mkdir(newpath, 493)
 	if not success then
 		vim.notify(string.format("%s: %s", errname, errmsg), vim.log.levels.ERROR)
-		return
+		return false
 	end
 
+	success = true
 	while true do
 		local name, type = uv.fs_scandir_next(handle)
 		if not name then
@@ -34,17 +37,19 @@ function M.copydir(dir, newpath)
 		end
 		local filepath = fs.joinpath(dir, name)
 		if type == "directory" then
-			M.copydir(filepath, fs.joinpath(newpath, name))
+			success = M.copydir(filepath, fs.joinpath(newpath, name))
 		elseif type == "file" then
-			M.copyfile(filepath, fs.joinpath(newpath, name))
+			success = M.copyfile(filepath, fs.joinpath(newpath, name))
 		elseif type == "link" then
-			M.copylink(filepath, fs.joinpath(newpath, name))
+			success = M.copylink(filepath, fs.joinpath(newpath, name))
 		end
 	end
+	return success
 end
 
 ---@param oldpath string
 ---@param newpath string
+---@return boolean?
 function M.copylink(oldpath, newpath)
 	local target = uv.fs_readlink(oldpath)
 	if target then
@@ -52,16 +57,49 @@ function M.copylink(oldpath, newpath)
 			M.sudo_exec({ 'cp', oldpath, newpath })
 			return vim.v.shell_error == 0
 		end
-		uv.fs_symlink(target, newpath)
+		local success, errname, errmsg = uv.fs_symlink(target, newpath)
+		return success
 	end
 end
 
+function M.copy(oldpath, newdir)
+	local stat = vim.uv.fs_lstat(oldpath)
+	local type = stat and stat.type
+	local joinpath, basename = vim.fs.joinpath, vim.fs.basename
+	local newpath = joinpath(newdir, basename(oldpath:sub(-1) == '/' and oldpath:sub(1, -2) or oldpath))
+	if type == 'directory' then
+		require('dir.fs').copydir(oldpath, newpath)
+	elseif type == 'file' then
+		require('dir.fs').copyfile(oldpath, newpath)
+	elseif type == 'link' then
+		require('dir.fs').copyfile(oldpath, newpath)
+	end
+end
+
+---@param oldname string
+---@param newname string
 function M.rename(oldname, newname)
 	local success, err, errname = vim.uv.fs_rename(oldname, newname)
 	if not success then
-		vim.notify(err .. ' ' .. errname, vim.log.levels.ERROR)
-		return
+		success = M.copy(oldname, vim.fs.dirname(newname:sub(-1) == '/' and newname:sub(1, -2) or newname))
+		if success then
+			M.remove(oldname)
+		else
+			vim.notify("Copy not successful. Old path will be kept")
+		end
 	end
+end
+
+---@param path string
+---@return boolean
+function M.remove(path)
+	local success = false
+	if vim.fn.isdirectory(path) == 1 then
+		success = vim.fn.delete(path, 'rf') == 0
+	else
+		success = vim.fn.delete(path) == 0
+	end
+	return success
 end
 
 ---@param mode number

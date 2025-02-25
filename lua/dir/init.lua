@@ -108,7 +108,7 @@ function M.remove()
 	ws.willDeleteFiles(will_delete_files)
 	local did_delete_files = {}
 	for _, path in ipairs(paths) do
-		local success = vim.fn.delete(path, 'rf') == 0
+		local success = require('dir.fs').remove(path)
 		if success then
 			table.insert(did_delete_files, { path })
 		end
@@ -166,7 +166,7 @@ function M.copy(paths)
 end
 
 ---@param paths string[]? paths to prepare for move. If in visual mode, leave empty
-function M.move(paths)
+function M.cut(paths)
 	local lines = paths or get_visual_selected_lines()
 	M.pending_operations = {
 		type = 'move',
@@ -182,19 +182,6 @@ function M.paste()
 		local new_dir = api.nvim_get_buf_name(0)
 		for _, target in ipairs(targets) do
 			---@diagnostic disable-next-line: param-type-mismatch
-			local stat = vim.uv.fs_lstat(target)
-			local type = stat and stat.type
-			local joinpath, basename = vim.fs.joinpath, vim.fs.basename
-			if type == 'directory' then
-				newpath = joinpath(new_dir, basename(target:sub(1, -2)))
-				require('dir.fs').copydir(target, newpath)
-			elseif type == 'file' then
-				newpath = joinpath(new_dir, basename(target))
-				require('dir.fs').copyfile(target, newpath)
-			elseif type == 'link' then
-				newpath = joinpath(new_dir, basename(target))
-				require('dir.fs').copyfile(target, newpath)
-			end
 		end
 	end
 	vim.cmd.edit()
@@ -209,9 +196,9 @@ M.mkfile = function()
 	if #filename == 0 then
 		return
 	end
-	local dirname = fs.dirname(filename)
+	local dirname = vim.fs.dirname(filename)
 	if vim.fn.isdirectory(dirname) == 0 then
-		fs.mkdir(dirname)
+		vim.fn.mkdir(dirname, 'p')
 	end
 	if vim.fn.isdirectory(dirname) == 1 then
 		vim.cmd.edit("%" .. filename)
@@ -227,7 +214,7 @@ M.mkdir = function()
 	end
 	ws.willCreateFiles(dirname)
 	local dirpath = vim.fs.joinpath(api.nvim_buf_get_name(0), dirname)
-	local success = fs.mkdir(dirpath)
+	local success = vim.fn.mkdir(dirpath, 'p') == 1
 	if not success then
 		vim.notify(
 			("Failed to create %s"):format(dirpath),

@@ -48,11 +48,11 @@ map('n', config.keymaps.hover, function()
 	require 'dir'.hover()
 end, { desc = 'View file or folder info', buffer = buf })
 
-map('x', config.keymaps.remove, function()
+map({ 'n', 'x' }, config.keymaps.remove, function()
 	require 'dir'.remove()
 end, { desc = 'Remove files/folders under cursor or selected in visual mode', buffer = true })
 
-map('n', config.keymaps.remove .. config.keymaps.remove:sub(-1), function()
+map('n', config.keymaps.remove, function()
 	require 'dir'.remove()
 end)
 
@@ -76,7 +76,7 @@ if config.keymaps.copy then
 	map({ 'x' }, config.keymaps.copy, function()
 		require 'dir'.copy()
 	end, { desc = 'Copy path under cursor or selected in visual mode', buffer = true })
-	map('n', config.keymaps.copy .. config.keymaps.copy:sub(-1), function()
+	map('n', config.keymaps.copy, function()
 		require 'dir'.copy({ vim.api.nvim_get_current_line() })
 	end, { desc = 'Copy path under cursor and append to clipboard', buffer = true })
 end
@@ -85,7 +85,7 @@ if config.keymaps.move then
 	map({ 'x' }, config.keymaps.move, function()
 		require 'dir'.move()
 	end, { desc = 'Move paths', buffer = true })
-	map('n', config.keymaps.move .. config.keymaps.move:sub(-1), function()
+	map('n', config.keymaps.move, function()
 		require 'dir'.move({ vim.api.nvim_get_current_line() })
 	end, { desc = 'Move path under cursor', buffer = true })
 end
@@ -129,12 +129,12 @@ vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 })
 
 vim.b.undo_ftplugin_func = function()
-	vim.cmd [[setl conceallevel< concealcursor< bufhidden< buftype< swapfile< swap<]]
+	vim.cmd [[setl conceallevel< concealcursor< bufhidden< buftype< swapfile< wrap<]]
 	vim.cmd [[silent! nunmap <CR> <2-LeftMouse> !]]
 	for _, v in pairs(config.keymaps) do
 		vim.keymap.del('n', v)
 	end
-	for _, v in ipairs({ 'copy', 'move', 'argadd', 'argdelete' }) do
+	for _, v in ipairs({ 'copy', 'move', 'remove', 'argadd', 'argdelete' }) do
 		if config.keymaps[v] then
 			vim.keymap.del('x', config.keymaps[v])
 		end

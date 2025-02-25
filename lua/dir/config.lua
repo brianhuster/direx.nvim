@@ -7,7 +7,7 @@ local M = {}
 M.iconfunc = nil
 
 ---@class DirConfigKeymaps
----@field editfile string?
+---@field mkfile string?
 ---@field mkdir string?
 ---@field rename string?
 ---@field remove string?
