@@ -107,5 +107,4 @@ function M.inspect_bytes(bytes)
 	return string.format("%.2f%s", bytes, units[unit_index])
 end
 
-
 return M

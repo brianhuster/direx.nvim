@@ -4,10 +4,10 @@ local ws = require('dir.lsp').workspace
 local fs = require('dir.fs')
 
 ---@type { type: 'copy'|'move', paths: string[] }
-local pending_operations = {}
+M.pending_operations = {}
 
 ---@return string[]
-local function get_visual_lines()
+local function get_visual_selected_lines()
 	local line_start = api.nvim_buf_get_mark(0, "<")[1]
 	local line_end = api.nvim_buf_get_mark(0, ">")[1]
 
@@ -63,7 +63,7 @@ function M.rename()
 end
 
 --- Use for `K` mapping
-function M.keywordexpr()
+function M.hover()
 	local fs = require 'dir.fs'
 	local path = api.nvim_get_current_line()
 	local stat = vim.uv.fs_stat(path)
@@ -92,7 +92,7 @@ function M.remove()
 	if mode == 'n' then
 		paths = { api.nvim_get_current_line() }
 	else
-		paths = get_visual_lines()
+		paths = get_visual_selected_lines()
 	end
 	local confirm = vim.fn.confirm(
 		'Are you sure you want to delete these files?\n' .. table.concat(paths, '\n'),
@@ -136,10 +136,15 @@ function M.shdo(fmt, dir, items)
 	vim.cmd.filetype 'detect'
 end
 
+---@param path string
 function M.preview(path)
 	if path:sub(-1) == '/' then
+		local initial_text = 'a'
+		for i = 1, 50 do
+			initial_text = initial_text .. 'a'
+		end
 		local buf, _ = vim.lsp.util.open_floating_preview(
-			{ ' ' }, 'directory',
+			{ initial_text }, 'directory',
 			{ border = 'rounded', width = 50, height = 20 })
 		vim.bo[buf].modifiable = true
 		M.open(buf, path)
@@ -150,20 +155,20 @@ function M.preview(path)
 	end
 end
 
---- Only works in visual mode
-function M.copy()
-	local lines = get_visual_lines()
-	pending_operations = {
+---@param paths string[]? paths to prepare for copy. If in visual mode, leave empty
+function M.copy(paths)
+	local lines = paths or get_visual_selected_lines()
+	M.pending_operations = {
 		type = 'copy',
 		paths = lines,
 	}
 	vim.notify('Copied ' .. #lines .. ' files')
 end
 
---- Only works in visual mode
-function M.move()
-	local lines = get_visual_lines()
-	pending_operations = {
+---@param paths string[]? paths to prepare for move. If in visual mode, leave empty
+function M.move(paths)
+	local lines = paths or get_visual_selected_lines()
+	M.pending_operations = {
 		type = 'move',
 		paths = lines,
 	}
@@ -172,8 +177,8 @@ end
 
 function M.paste()
 	local newpath ---@type string?
-	local targets = pending_operations.paths
-	if pending_operations.type == 'copy' then
+	local targets = M.pending_operations.paths
+	if M.pending_operations.type == 'copy' then
 		local new_dir = api.nvim_get_buf_name(0)
 		for _, target in ipairs(targets) do
 			---@diagnostic disable-next-line: param-type-mismatch
@@ -198,7 +203,7 @@ function M.paste()
 	end
 end
 
-M.editfile = function()
+M.mkfile = function()
 	local filename = vim.fn.input('Enter filename: ', '', 'file')
 	filename = vim.trim(filename)
 	if #filename == 0 then
@@ -210,6 +215,7 @@ M.editfile = function()
 	end
 	if vim.fn.isdirectory(dirname) == 1 then
 		vim.cmd.edit("%" .. filename)
+		vim.cmd.write()
 	end
 end
 
@@ -238,7 +244,7 @@ function M.argadd()
 	if mode == 'n' then
 		vim.cmd.argadd(api.nvim_get_current_line())
 	else
-		for _, arg in ipairs(get_visual_lines()) do
+		for _, arg in ipairs(get_visual_selected_lines()) do
 			vim.cmd.argadd(arg)
 			vim.cmd.argdedupe(arg)
 		end
@@ -250,7 +256,7 @@ function M.argdelete()
 	if mode == 'n' then
 		vim.cmd.argdel(vim.fn.fnameescape(api.nvim_get_current_line()))
 	else
-		for _, arg in ipairs(get_visual_lines()) do
+		for _, arg in ipairs(get_visual_selected_lines()) do
 			vim.cmd.argdelete(vim.fn.fnameescape(arg))
 		end
 	end

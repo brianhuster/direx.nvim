@@ -9,6 +9,7 @@ local saved_files = {}
 local api = vim.api
 local edit = vim.cmd.edit
 local au = api.nvim_create_autocmd
+local config = require 'dir.config'
 
 api.nvim_create_augroup('FileExplorer', {
 	clear = true
@@ -57,6 +58,7 @@ end, { nargs = '+', desc = 'Find file <arg> in directory and its subdirectories'
 au('FileWritePre', {
 	group = 'FileExplorer',
 	callback = function(args)
+		error(vim.inspect(args))
 		local lsp = require 'dir.lsp'
 		if vim.fn.filereadable(args.file) == 0 then
 			lsp.workspace.willCreateFiles({ args.match })
@@ -73,6 +75,7 @@ au('FileWritePre', {
 au('FileWritePost', {
 	group = 'FileExplorer',
 	callback = function(args)
+		error(vim.inspect(args))
 		if saved_files[args.match] == 0 then
 			require 'dir.lsp'.workspace.didCreateFiles({ args.match })
 		end

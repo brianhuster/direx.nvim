@@ -1,5 +1,6 @@
-vim.wo.conceallevel = 3
-vim.wo.concealcursor = 'nv'
+vim.wo[0][0].conceallevel = 3
+vim.wo[0][0].concealcursor = 'nvc'
+vim.wo[0][0].wrap = false
 vim.bo.bufhidden = 'delete'
 vim.bo.buftype = 'nowrite'
 vim.bo.swapfile = false
@@ -11,6 +12,7 @@ local api = vim.api
 local ns_id = vim.api.nvim_create_namespace('Directory')
 local buf = vim.api.nvim_get_current_buf()
 local map = vim.keymap.set
+local config = require('dir.config')
 
 local function add_icons()
 	vim.api.nvim_buf_clear_namespace(buf, ns_id, 0, -1)
@@ -31,22 +33,22 @@ end
 
 add_icons()
 
-map('n', 'grn', function()
+for _, key in ipairs { '<CR>', '<2-LeftMouse>' } do
+	map('n', key, function()
+		vim.cmd.edit(api.nvim_get_current_line())
+	end, { buffer = true })
+end
+
+map('n', config.keymaps.rename, function()
 	require 'dir'.rename()
 end, { desc = 'Rename path under cursor', buffer = buf })
 
 
-for _, key in ipairs { '<CR>', '<2-LeftMouse>' } do
-	map('n', key, function()
-		vim.cmd.edit(api.nvim_get_current_line())
-	end, { desc = 'Open path under cursor', buffer = buf })
-end
-
-map('n', 'K', function()
-	require 'dir'.keywordexpr()
+map('n', config.keymaps.hover, function()
+	require 'dir'.hover()
 end, { desc = 'View file or folder info', buffer = buf })
 
-map({ 'n', 'x' }, '<Del>', function()
+map({ 'n', 'x' }, config.keymaps.remove, function()
 	require 'dir'.remove()
 end, { desc = 'Remove files/folders under cursor or selected in visual mode', buffer = true })
 
@@ -60,8 +62,47 @@ map('n', '!', function()
 	feedkeys(path .. '<C-b>!')
 end, {})
 
-map('n', 'P', function() require 'dir'.preview(api.nvim_get_current_line()) end,
-	{ buffer = buf, desc = 'Preview file or directory' })
+if config.keymaps.preview then
+	map('n', config.keymaps.preview, function()
+		require 'dir'.preview(api.nvim_get_current_line())
+	end, { desc = 'Preview file or directory', buffer = true })
+end
+
+if config.keymaps.copy then
+	map({ 'x' }, config.keymaps.copy, function()
+		require 'dir'.copy()
+	end, { desc = 'Copy path under cursor or selected in visual mode', buffer = true })
+	map('n', config.keymaps.copy .. config.keymaps.copy:sub(-1), function()
+		require 'dir'.copy({ vim.api.nvim_get_current_line() })
+	end, { desc = 'Copy path under cursor and append to clipboard', buffer = true })
+end
+
+if config.keymaps.move then
+	map({ 'x' }, config.keymaps.move, function()
+		require 'dir'.move()
+	end, { desc = 'Move paths', buffer = true })
+	map('n', config.keymaps.move .. config.keymaps.move:sub(-1), function()
+		require 'dir'.move({ vim.api.nvim_get_current_line() })
+	end, { desc = 'Move path under cursor', buffer = true })
+end
+
+if config.keymaps.paste then
+	map('n', config.keymaps.paste, function()
+		require 'dir'.paste()
+	end, { desc = 'Paste paths', buffer = true })
+end
+
+if config.keymaps.argadd then
+	map({ 'n', 'x' }, config.keymaps.argadd, function()
+		require 'dir'.argadd()
+	end, { desc = 'Add paths to argument list', buffer = true })
+end
+
+if config.keymaps.argdelete then
+	map({ 'n', 'x' }, config.keymaps.argdelete, function()
+		require 'dir'.argdelete()
+	end, { desc = 'Delete paths from argument list', buffer = true })
+end
 
 api.nvim_create_user_command('Shdo', function(args)
 	local lines = args.range > 0 and api.nvim_buf_get_lines(0, args.line1 - 1, args.line2, false) or nil
@@ -85,12 +126,10 @@ vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 
 vim.cmd [[
 func! s:undo_ft_directory()
-	setl conceallevel< concealcursor< bufhidden< buftype< swapfile<
+	setl conceallevel< concealcursor< bufhidden< buftype< swapfile< wrap<
 	silent! nunmap grn K <Del> <CR> <2-LeftMouse> !
 	silent! xunmap <Del>
-	augroup ft-directory
-		au!
-	augroup END
+	augroup ft-directory | au! | augroup END
 endf
 let b:undo_ftplugin = 'call ' . expand('<SID>') . 'undo_ft_directory()'
 ]]
