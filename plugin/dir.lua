@@ -39,7 +39,8 @@ vim.keymap.set('n', '-', function()
 end, { desc = 'Open parent directory' })
 
 vim.api.nvim_create_user_command('Find', function(args)
-	local files = vim.fn.glob((vim.bo[api.nvim_win_get_buf(0)].ft == 'directory' and '%**/' or './**/') .. args.args, false, true)
+	local files = vim.fn.glob((vim.bo[api.nvim_win_get_buf(0)].ft == 'directory' and '%**/' or './**/') .. args.args,
+		false, true)
 	if #files == 0 then
 		vim.notify('No files found', vim.log.levels.WARN)
 		return

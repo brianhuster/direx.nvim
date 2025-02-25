@@ -150,6 +150,7 @@ function M.preview(path)
 	end
 end
 
+--- Only works in visual mode
 function M.copy()
 	local lines = get_visual_lines()
 	pending_operations = {
@@ -159,6 +160,7 @@ function M.copy()
 	vim.notify('Copied ' .. #lines .. ' files')
 end
 
+--- Only works in visual mode
 function M.move()
 	local lines = get_visual_lines()
 	pending_operations = {
@@ -228,6 +230,29 @@ M.mkdir = function()
 		vim.cmd.edit(dirpath)
 		moveCursorTo(dirname .. '/')
 		ws.didCreateFiles(dirpath)
+	end
+end
+
+function M.argadd()
+	local mode = api.nvim_get_mode().mode
+	if mode == 'n' then
+		vim.cmd.argadd(api.nvim_get_current_line())
+	else
+		for _, arg in ipairs(get_visual_lines()) do
+			vim.cmd.argadd(arg)
+			vim.cmd.argdedupe(arg)
+		end
+	end
+end
+
+function M.argdelete()
+	local mode = vim.api.nvim_get_mode().mode
+	if mode == 'n' then
+		vim.cmd.argdel(vim.fn.fnameescape(api.nvim_get_current_line()))
+	else
+		for _, arg in ipairs(get_visual_lines()) do
+			vim.cmd.argdelete(vim.fn.fnameescape(arg))
+		end
 	end
 end
 
