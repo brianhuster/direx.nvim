@@ -1,26 +1,11 @@
 local M = {}
 local api = vim.api
-local ws = require 'dir.lsp'.workspace
----@module 'dir.fs'
-local dirfs = setmetatable({}, { __index = function(_, k) return require('dir.fs')[k] end })
+local ws = require 'direx.lsp'.workspace
+---@module 'direx.fs'
+local dirfs = setmetatable({}, { __index = function(_, k) return require('direx.fs')[k] end })
 
 ---@type { type: 'copy'|'move', paths: string[] }
 M.pending_operations = {}
-
----@return string[]
-local function get_visual_selected_lines()
-	local line_start = api.nvim_buf_get_mark(0, "<")[1]
-	local line_end = api.nvim_buf_get_mark(0, ">")[1]
-
-	if line_start > line_end then
-		line_start, line_end = line_end, line_start
-	end
-
-	--- Nvim API indexing is zero-based, end-exclusive
-	local lines = api.nvim_buf_get_lines(0, line_start - 1, line_end, false)
-
-	return lines
-end
 
 ---@param target string
 local function moveCursorTo(target)
@@ -47,12 +32,12 @@ function M.open(bufnr, dir)
 		return p
 	end, paths)
 	api.nvim_buf_set_lines(bufnr, 0, -1, false, paths)
-	vim.bo[bufnr].filetype = 'directory'
+	vim.bo[bufnr].filetype = 'direx'
 end
 
 function M.rename()
 	local oldname = api.nvim_get_current_line()
-	local newname = vim.fn.input('Rename to ', oldname, 'file')
+	local newname = vim.fn.input('New name: ', oldname, 'file')
 	if oldname == newname or #newname == 0 then
 		return
 	end
@@ -85,26 +70,19 @@ function M.hover()
 	}, 'markdown')
 end
 
----@param opts? { trash: boolean }
-function M.remove(opts)
-	---@type string[]
-	local paths = {}
-	local mode = api.nvim_get_mode().mode
-	if mode == 'n' then
-		paths = { api.nvim_get_current_line() }
-	else
-		paths = get_visual_selected_lines()
-	end
-	if not opts then
-		opts = {}
-	end
-	local confirm = vim.fn.confirm(
-		'Are you sure you want to ' ..
-		(opts.trash and 'trash' or 'delete') .. ' these files?\n' .. table.concat(paths, '\n'),
-		'&Yes\n&No',
-		2)
-	if confirm ~= 1 then
-		return
+---@param paths string[]
+---@param opts { trash: boolean?, confirm: boolean? }?
+function M.remove(paths, opts)
+	opts = opts or {}
+	if opts.confirm then
+		local confirm = vim.fn.confirm(
+			'Are you sure you want to ' ..
+			(opts.trash and 'trash' or 'delete') .. ' these files?\n' .. table.concat(paths, '\n'),
+			'&Yes\n&No',
+			2)
+		if confirm ~= 1 then
+			return
+		end
 	end
 
 	local will_delete_files = vim.tbl_map(function(v)
@@ -131,7 +109,6 @@ function M.shdo(fmt, dir, items)
 	vim.fn.setline(1, '#!' .. vim.o.shell)
 	vim.fn.setline(2, 'cd ' .. vim.fn.shellescape(vim.fn.getcwd()))
 
-	items = items or vim.fn.argv()
 	for _, item in ipairs(items) do
 		local line = fmt:gsub('{([^}]*)}', function(mod)
 			return vim.fn.fnamemodify(item, mod:sub(2))
@@ -145,7 +122,7 @@ end
 function M.preview(path)
 	if path:sub(-1) == '/' then
 		local buf, _ = vim.lsp.util.open_floating_preview(
-			{ ' ' }, 'directory',
+			{ ' ' }, 'direx',
 			{ border = 'rounded', width = 50, height = 20 })
 		vim.bo[buf].modifiable = true
 		M.open(buf, path)
@@ -156,35 +133,33 @@ function M.preview(path)
 	end
 end
 
----@param paths string[]? paths to prepare for copy. If in visual mode, leave empty
+---@param paths string[] paths to prepare for copy. If in visual mode, leave empty
 function M.copy(paths)
-	local lines = paths or get_visual_selected_lines()
 	M.pending_operations = {
 		type = 'copy',
-		paths = lines,
+		paths = paths,
 	}
-	vim.notify('Copied ' .. #lines .. ' files')
+	vim.notify('Copied ' .. #paths .. ' files')
 end
 
----@param paths string[]? paths to prepare for move. If in visual mode, leave empty
+---@param paths string[] paths to prepare for move. If in visual mode, leave empty
 function M.cut(paths)
-	local lines = paths or get_visual_selected_lines()
 	M.pending_operations = {
 		type = 'move',
-		paths = lines,
+		paths = paths,
 	}
-	vim.notify('Cut ' .. #lines .. ' files')
+	vim.notify('Cut ' .. #paths .. ' files')
 end
 
 function M.paste()
 	local newpath ---@type string?
 	local oldpaths = M.pending_operations.paths
 	local type = M.pending_operations.type
-	local new_dir = api.nvim_get_buf_name(0)
+	local new_dir = api.nvim_buf_get_name(0)
 	M.pending_operations.paths = {}
 	if type == 'copy' then
 		for _, target in ipairs(oldpaths) do
-			local newpath = vim.fs.joinpath(new_dir, dirfs.basename(target))
+			newpath = vim.fs.joinpath(new_dir, dirfs.basename(target))
 			local success = dirfs.copy(target, newpath)
 			if not success then
 				vim.notify(string.format("Failed to copy %s", target), vim.log.levels.ERROR)
@@ -193,7 +168,7 @@ function M.paste()
 		end
 	elseif type == 'move' then
 		for _, target in ipairs(oldpaths) do
-			local newpath = vim.fs.joinpath(new_dir, dirfs.basename(target))
+			newpath = vim.fs.joinpath(new_dir, dirfs.basename(target))
 			local success = dirfs.rename(target, newpath)
 			if not success then
 				vim.notify(string.format("Failed to move %s", target), vim.log.levels.ERROR)
@@ -207,63 +182,58 @@ function M.paste()
 	end
 end
 
-M.mkfile = function()
-	local filename = vim.fn.input('Enter filename: ', '', 'file')
-	filename = vim.trim(filename)
-	if #filename == 0 then
-		return
-	end
+M.edit = function(filename)
 	local dirname = vim.fs.dirname(filename)
 	if vim.fn.isdirectory(dirname) == 0 then
 		vim.fn.mkdir(dirname, 'p')
 	end
 	if vim.fn.isdirectory(dirname) == 1 then
 		vim.cmd.edit("%" .. filename)
-		vim.cmd.write()
 	end
 end
 
-M.mkdir = function()
-	local dirname = vim.fn.input('Directory name : ', '', 'file')
-	dirname = vim.trim(dirname)
-	if #dirname == 0 then
-		return
-	end
+M.mkdir = function(dirname)
 	ws.willCreateFiles(dirname)
-	local dirpath = vim.fs.joinpath(api.nvim_buf_get_name(0), dirname)
+	local dirpath = vim.fs.normalize(vim.fs.joinpath(api.nvim_buf_get_name(0), dirname))
 	local success = vim.fn.mkdir(dirpath, 'p') == 1
 	if not success then
 		vim.notify(
 			("Failed to create %s"):format(dirpath),
 			vim.log.levels.ERROR)
 	else
-		vim.cmd.edit(dirpath)
+		vim.cmd.edit()
 		moveCursorTo(dirname .. '/')
 		ws.didCreateFiles(dirpath)
 	end
 end
 
-function M.argadd()
-	local mode = api.nvim_get_mode().mode
-	if mode == 'n' then
-		vim.cmd.argadd(api.nvim_get_current_line())
-	else
-		for _, arg in ipairs(get_visual_selected_lines()) do
-			vim.cmd.argadd(arg)
-			vim.cmd.argdedupe(arg)
-		end
+---@param pattern string
+---@param opts { wintype: 'quickfix'|'location'? }
+function M.find_files(pattern, opts)
+	local default_opts = {
+		wintype = 'quickfix',
+	}
+	opts = vim.tbl_deep_extend('force', default_opts, opts)
+	local files = vim.fn.glob((vim.bo[api.nvim_win_get_buf(0)].ft == 'direx' and '%**/' or './**/') .. pattern,
+		false, true)
+	if #files == 0 then
+		vim.notify('No files found', vim.log.levels.WARN)
+		return
 	end
-end
-
-function M.argdelete()
-	local mode = vim.api.nvim_get_mode().mode
-	if mode == 'n' then
-		vim.cmd.argdel(vim.fn.fnameescape(api.nvim_get_current_line()))
-	else
-		for _, arg in ipairs(get_visual_selected_lines()) do
-			vim.cmd.argdelete(vim.fn.fnameescape(arg))
-		end
+	local dir = vim.bo.ft == 'direx' and api.nvim_buf_get_name(0) or vim.uv.cwd()
+	---@param wintype 'location'|'quickfix'
+	---@param ... any see :h setqflist()
+	---@return boolean
+	local setlist = function(wintype, ...)
+		return (wintype == 'location' and vim.fn.setloclist(0, ...) or vim.fn.setqflist(...)) == 0
 	end
+	setlist(opts.wintype, {}, 'r', {
+		lines = vim.fn.glob(files, false, true),
+		efm = '%f',
+		title = 'Find ' .. pattern .. ' from ' .. dir
+	})
+	vim.cmd(opts.wintype == 'location' and 'lopen' or 'copen')
+	vim.bo.ft = 'direxfindfile'
 end
 
 return M

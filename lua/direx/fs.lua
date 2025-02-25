@@ -92,16 +92,17 @@ end
 ---@param newname string
 ---@return boolean
 function M.rename(oldname, newname)
-	local success, err, errname = vim.uv.fs_rename(oldname, newname)
-	if not success then
-		success = M.copy(oldname, newname)
-		if success then
-			return M.remove(oldname)
-		else
-			vim.notify("Copy not successful. Old path will be kept")
-		end
-	end
-	return false
+	-- local success, err, errname = vim.uv.fs_rename(oldname, newname)
+	-- if not success then
+	-- 	success = M.copy(oldname, newname)
+	-- 	if success then
+	-- 		return M.remove(oldname)
+	-- 	else
+	-- 		vim.notify("Copy not successful. Old path will be kept")
+	-- 	end
+	-- end
+	-- return false
+	return vim.fn.rename(oldname, newname) == 0
 end
 
 ---@param path string
