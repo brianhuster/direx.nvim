@@ -156,10 +156,14 @@ end
 --- This function only works on OS and desktop environments that follow FreeDesktop.org standards
 ---@see https://specifications.freedesktop.org/trash-spec/latest/
 ---@param path string
----@return boolean
 function M.trash(path)
-	if vim.fn.has('win32') == 1 then
-		return false
+	if vim.fn.has('win32') == 1 or vim.fn.has('mac') then
+		if vim.fn.executable('trash') then
+			return vim.system({ 'trash', vim.fn.shellescape(path) }, { text = true }, function(obj)
+				print(obj.stderr)
+				print(obj.stdout)
+			end)
+		end
 	end
 
 	path = path:sub(-1) == '/' and path:sub(1, -2) or path
