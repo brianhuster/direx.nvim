@@ -11,7 +11,9 @@ vim.fn.search([[\V\C]] .. vim.fn.escape(vim.w.prev_bufname, '\\'), 'cw')
 local api = vim.api
 local ns_id = vim.api.nvim_create_namespace('Directory')
 local buf = vim.api.nvim_get_current_buf()
-local map = vim.keymap.set
+local map = function(mode, lhs, rhs, opts)
+	vim.keymap.set(mode, lhs, rhs, vim.tbl_extend('force', opts or {}, { buffer = buf }))
+end
 local config = require('dir.config')
 
 local function add_icons()
@@ -36,21 +38,21 @@ add_icons()
 for _, key in ipairs { '<CR>', '<2-LeftMouse>' } do
 	map('n', key, function()
 		vim.cmd.edit(api.nvim_get_current_line())
-	end, { buffer = true })
+	end)
 end
 
 map('n', config.keymaps.rename, function()
 	require 'dir'.rename()
-end, { desc = 'Rename path under cursor', buffer = buf })
+end, { desc = 'Rename path under cursor' })
 
 
 map('n', config.keymaps.hover, function()
 	require 'dir'.hover()
-end, { desc = 'View file or folder info', buffer = buf })
+end, { desc = 'View file or folder info' })
 
 map({ 'n', 'x' }, config.keymaps.remove, function()
 	require 'dir'.remove()
-end, { desc = 'Remove files/folders under cursor or selected in visual mode', buffer = true })
+end, { desc = 'Remove files/folders under cursor or selected in visual mode' })
 
 map('n', config.keymaps.remove, function()
 	require 'dir'.remove()
@@ -131,6 +133,7 @@ vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 vim.b.undo_ftplugin_func = function()
 	vim.cmd [[setl conceallevel< concealcursor< bufhidden< buftype< swapfile< wrap<]]
 	vim.cmd [[silent! nunmap <CR> <2-LeftMouse> !]]
+	vim.cmd [[silent! delcomamnd -buffer Shdo]]
 	for _, v in pairs(config.keymaps) do
 		vim.keymap.del('n', v)
 	end
@@ -141,4 +144,4 @@ vim.b.undo_ftplugin_func = function()
 	end
 end
 
-vim.b.undo_ftplugin = "call b:undo_ftplugin_func() | unlet b:undo_ftplugin_func"
+vim.b.undo_ftplugin = "silent! call b:undo_ftplugin_func() | unlet b:undo_ftplugin_func"

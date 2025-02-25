@@ -3,6 +3,16 @@ local M = {}
 local uv = vim.uv
 local fs = vim.fs
 
+local function basename(path)
+	return vim.fs.basename(path:sub(-1) == '/' and path:sub(1, -2) or path)
+end
+
+---@param path string
+---@return boolean
+function M.mkdir(path)
+	return vim.fn.mkdir(path, 'p') == 1
+end
+
 ---@param file string
 ---@param newpath string
 ---@return boolean
@@ -44,7 +54,7 @@ function M.copydir(dir, newpath)
 			success = M.copylink(filepath, fs.joinpath(newpath, name))
 		end
 	end
-	return success
+	return not not success
 end
 
 ---@param oldpath string
@@ -65,8 +75,8 @@ end
 function M.copy(oldpath, newdir)
 	local stat = vim.uv.fs_lstat(oldpath)
 	local type = stat and stat.type
-	local joinpath, basename = vim.fs.joinpath, vim.fs.basename
-	local newpath = joinpath(newdir, basename(oldpath:sub(-1) == '/' and oldpath:sub(1, -2) or oldpath))
+	local joinpath = vim.fs.joinpath
+	local newpath = joinpath(newdir, basename(oldpath))
 	if type == 'directory' then
 		require('dir.fs').copydir(oldpath, newpath)
 	elseif type == 'file' then
@@ -78,16 +88,18 @@ end
 
 ---@param oldname string
 ---@param newname string
+---@return boolean
 function M.rename(oldname, newname)
 	local success, err, errname = vim.uv.fs_rename(oldname, newname)
 	if not success then
 		success = M.copy(oldname, vim.fs.dirname(newname:sub(-1) == '/' and newname:sub(1, -2) or newname))
 		if success then
-			M.remove(oldname)
+			return M.remove(oldname)
 		else
 			vim.notify("Copy not successful. Old path will be kept")
 		end
 	end
+	return false
 end
 
 ---@param path string
@@ -143,6 +155,42 @@ function M.inspect_bytes(bytes)
 		unit_index = unit_index + 1
 	end
 	return string.format("%.2f%s", bytes, units[unit_index])
+end
+
+--- This function only works on OS and desktop environments that follow FreeDesktop.org standards
+---@see https://specifications.freedesktop.org/trash-spec/latest/
+---@param path string
+---@return boolean
+function M.trash(path)
+	local time = os.date('%Y-%m-%dT%H-%M-%S')
+	local file_name = basename(path) .. '_' .. time
+	if vim.fn.has('win32') == 1 then
+		return false
+	end
+	local trash = os.getenv('HOME') .. '/.local/share/Trash'
+	local trashfiles_dir = trash .. '/files'
+	local trashinfo_dir = trash .. '/info'
+	for _, v in ipairs { trashfiles_dir, trashinfo_dir } do
+		if not vim.fn.isdirectory(v) then
+			local success = vim.fn.mkdir(v, 'p')
+			if not success then
+				vim.notify(string.format("Failed to create %s", v), vim.log.levels.ERROR)
+				return false
+			end
+		end
+	end
+	-- Create and write the trashinfo file
+	local trashinfo_file = uv.fs_open(trashinfo_dir .. '/' .. file_name .. '.trashinfo', 'w', 438)
+	if not trashinfo_file then
+		vim.notify(string.format("Failed to create %s", file_name), vim.log.levels.ERROR)
+		return false
+	end
+	local trashinfo = ('[Trash Info]\nPath=%s\nDeletionDate=%s'):format(
+		vim.uri_from_fname(path):sub(#"file://" + 1),
+		os.date('%Y-%m-%dT%H:%M:%S'))
+	uv.fs_write(trashinfo_file, trashinfo, -1)
+	uv.fs_close(trashinfo_file)
+	return M.rename(path, trashfiles_dir .. '/' .. file_name)
 end
 
 return M
