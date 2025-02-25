@@ -9,7 +9,6 @@ local saved_files = {}
 local api = vim.api
 local edit = vim.cmd.edit
 local au = api.nvim_create_autocmd
-local config = require 'dir.config'
 
 api.nvim_create_augroup('FileExplorer', {
 	clear = true

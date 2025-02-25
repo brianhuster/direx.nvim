@@ -48,9 +48,13 @@ map('n', config.keymaps.hover, function()
 	require 'dir'.hover()
 end, { desc = 'View file or folder info', buffer = buf })
 
-map({ 'n', 'x' }, config.keymaps.remove, function()
+map('x', config.keymaps.remove, function()
 	require 'dir'.remove()
 end, { desc = 'Remove files/folders under cursor or selected in visual mode', buffer = true })
+
+map('n', config.keymaps.remove .. config.keymaps.remove:sub(-1), function()
+	require 'dir'.remove()
+end)
 
 map('n', '!', function()
 	local function feedkeys(key)
@@ -124,12 +128,17 @@ vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 	end
 })
 
-vim.cmd [[
-func! s:undo_ft_directory()
-	setl conceallevel< concealcursor< bufhidden< buftype< swapfile< wrap<
-	silent! nunmap grn K <Del> <CR> <2-LeftMouse> !
-	silent! xunmap <Del>
-	augroup ft-directory | au! | augroup END
-endf
-let b:undo_ftplugin = 'call ' . expand('<SID>') . 'undo_ft_directory()'
-]]
+vim.b.undo_ftplugin_func = function()
+	vim.cmd [[setl conceallevel< concealcursor< bufhidden< buftype< swapfile< swap<]]
+	vim.cmd [[silent! nunmap <CR> <2-LeftMouse> !]]
+	for _, v in pairs(config.keymaps) do
+		vim.keymap.del('n', v)
+	end
+	for _, v in ipairs({ 'copy', 'move', 'argadd', 'argdelete' }) do
+		if config.keymaps[v] then
+			vim.keymap.del('x', config.keymaps[v])
+		end
+	end
+end
+
+vim.b.undo_ftplugin = "call b:undo_ftplugin_func() | unlet b:undo_ftplugin_func"
