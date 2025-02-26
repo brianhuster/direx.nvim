@@ -213,14 +213,15 @@ function M.find_files(pattern, opts)
 	local default_opts = {
 		wintype = 'quickfix',
 	}
+	local in_direx_win = vim.bo[api.nvim_win_get_buf(0)].ft == 'direx'
 	opts = vim.tbl_deep_extend('force', default_opts, opts)
-	local files = vim.fn.glob((vim.bo[api.nvim_win_get_buf(0)].ft == 'direx' and '%**/' or './**/') .. pattern,
+	local files = vim.fn.glob((in_direx_win and '%**/' or './**/') .. pattern,
 		false, true)
 	if #files == 0 then
 		vim.notify('No files found', vim.log.levels.WARN)
 		return
 	end
-	local dir = vim.bo.ft == 'direx' and api.nvim_buf_get_name(0) or vim.uv.cwd()
+	local dir = in_direx_win and api.nvim_buf_get_name(0) or vim.uv.cwd()
 	---@param wintype 'location'|'quickfix'
 	---@param ... any see :h setqflist()
 	---@return boolean
@@ -228,12 +229,57 @@ function M.find_files(pattern, opts)
 		return (wintype == 'location' and vim.fn.setloclist(0, ...) or vim.fn.setqflist(...)) == 0
 	end
 	setlist(opts.wintype, {}, 'r', {
-		lines = vim.fn.glob(files, false, true),
-		efm = '%f',
-		title = 'Find ' .. pattern .. ' from ' .. dir
+		lines = files, efm = '%f', title = 'Find ' .. pattern .. ' from ' .. dir
 	})
 	vim.cmd(opts.wintype == 'location' and 'lopen' or 'copen')
 	vim.bo.ft = 'direxfindfile'
+end
+
+---@param pattern string
+---@param opts { wintype: 'quickfix'|'location'? }
+function M.grep(pattern, opts)
+	local grepcmd = vim.split(vim.o.grepprg, ' ')
+	local win = vim.api.nvim_get_current_win()
+	local in_direx_win = vim.bo[api.nvim_win_get_buf(win)].ft == 'direx'
+	local cwd = in_direx_win and api.nvim_buf_get_name(0) or vim.uv.cwd()
+	local default_opts = {
+		wintype = 'quickfix',
+	}
+	opts = vim.tbl_deep_extend('force', default_opts, opts)
+	if #grepcmd == 0 then
+		vim.notify('No grepprg set', vim.log.levels.ERROR)
+		return
+	end
+
+	grepcmd = vim.tbl_map(function(v)
+		if v == '' or v == '%s' then
+			return pattern
+		elseif v == '%' or v == '#' then
+			return vim.fn.expand(v)
+		end
+		return v
+	end, grepcmd)
+	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
+	local function setlist(list)
+		local dict = {
+			lines = list,
+			title = "Grep " .. pattern .. " from " .. cwd,
+			efm = vim.o.grepformat,
+		}
+		return opts.wintype == 'location' and vim.fn.setloclist(win, {}, 'r', dict) or vim.fn.setqflist({}, 'r', dict)
+	end
+	local grep_result = '' ---@type string
+	vim.system(grepcmd, {
+		text = true,
+		cwd = cwd,
+		stdout = vim.schedule_wrap(function(_, data)
+			if not data then return end
+			grep_result = grep_result .. data
+			setlist(vim.split(grep_result, '\n'))
+		end)
+	}, function(data)
+		print(data.stderr or '')
+	end)
 end
 
 return M

@@ -36,13 +36,23 @@ vim.keymap.set('n', '-', function()
 	edit(vim.fs.dirname(vim.fs.normalize(api.nvim_buf_get_name(0))))
 end, { desc = 'Open parent directory' })
 
-api.nvim_create_user_command('FindFile', function(args)
+local command = api.nvim_create_user_command
+
+command('FindFile', function(args)
 	require 'direx'.find_files(args.args, {})
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open quickfix window' })
 
-api.nvim_create_user_command('LFindFile', function(args)
+command('LFindFile', function(args)
 	require 'direx'.find_files(args.args, { wintype = 'location' })
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
+
+command('Grep', function(args)
+	require 'direx'.grep(args.args, {})
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
+
+command('LGrep', function(args)
+	require 'direx'.grep(args.args, { wintype = 'location' })
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
 
 au('BufWritePre', {
 	group = 'FileExplorer',
