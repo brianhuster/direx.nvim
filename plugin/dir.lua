@@ -31,27 +31,33 @@ au({ 'BufFilePost', 'ShellCmdPost' }, {
 	end
 })
 
-vim.keymap.set('n', '-', function()
+vim.o.grepprg = 'rg --vimgrep --max-columns=100 '
+
+vim.keymap.set('n', '<Plug>(direx-up)', function()
 	vim.w.prev_bufname = api.nvim_buf_get_name(0)
 	edit(vim.fs.dirname(vim.fs.normalize(api.nvim_buf_get_name(0))))
 end, { desc = 'Open parent directory' })
 
+if vim.fn.hasmapto('<Plug>(direx-up)') == 0 then
+	vim.keymap.set('n', '-', '<Plug>(direx-up)', { desc = 'Open parent directory' })
+end
+
 local command = api.nvim_create_user_command
 
-command('FindFile', function(args)
-	require 'direx'.find_files(args.args, {})
+command('FindFile', function(cmd)
+	require 'direx'.find_files(cmd.args, {})
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open quickfix window' })
 
-command('LFindFile', function(args)
-	require 'direx'.find_files(args.args, { wintype = 'location' })
+command('LFindFile', function(cmd)
+	require 'direx'.find_files(cmd.args, { wintype = 'location' })
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
 
-command('Grep', function(args)
-	require 'direx'.grep(args.args, {})
+command('Grep', function(cmd)
+	require 'direx'.grep(cmd.args, {})
 end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
 
-command('LGrep', function(args)
-	require 'direx'.grep(args.args, { wintype = 'location' })
+command('LGrep', function(cmd)
+	require 'direx'.grep(cmd.args, { wintype = 'location' })
 end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
 
 au('BufWritePre', {

@@ -211,9 +211,9 @@ function M.find_files(pattern, opts)
 end
 
 ---@param pattern string
----@param opts { wintype: 'quickfix'|'location'? }
+---@param opts { wintype: 'quickfix'|'location'?, vimgrep: boolean? }
 function M.grep(pattern, opts)
-	local grepprg = vim.o.grepprg
+	local grepprg, grepfm, shell, shellcmdflag = vim.o.grepprg, vim.o.grepformat, vim.o.shell, vim.o.shellcmdflag
 	local win = vim.api.nvim_get_current_win()
 	local in_direx_win = vim.bo[api.nvim_win_get_buf(win)].ft == 'direx'
 	local cwd = in_direx_win and api.nvim_buf_get_name(0) or vim.uv.cwd()
@@ -222,41 +222,78 @@ function M.grep(pattern, opts)
 	}
 	opts = vim.tbl_deep_extend('force', default_opts, opts)
 
-	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
-
-	--- Use `:vimgrep` and friends
-	if grepprg == '' or grepprg == 'internal' then
-		return vim.cmd[opts.wintype == 'quickfix' and 'vimgrep' or 'lvimgrep'](pattern ..
-			(in_direx_win and '%**' or '**'))
+	if #grepprg == 0 or grepprg == 'internal' then
+		vim.notify('No grepprg set. If you want to use internal grep, use :VimGrep or :LVimGrep', vim.log.levels.WARN)
+		return
 	end
 
-	--- Use external grep
-	local grepcmd = vim.split(grepprg, ' ')
-	grepcmd = vim.tbl_map(function(v)
+	local grepcmd = vim.tbl_map(function(v)
 		return (v == '' or v == '$*') and pattern
-			or ((v == '%' or v == '#') and vim.fn.expand(v))
+			or ((v:sub(1, 1) == '%' or v:sub(1, 1) == '#' or v:sub(1, 1) == '<') and vim.fn.expand(v))
 			or v
-	end, grepcmd)
+	end, vim.split(grepprg, ' '))
+	if require('direx.config').grep.parse_args == 'shell' then
+		grepcmd = { shell, shellcmdflag, table.concat(grepcmd, ' ') }
+	end
 	local function setlist(list)
 		local dict = {
 			lines = list,
 			title = "Grep " .. pattern .. " from " .. cwd,
-			efm = vim.o.grepformat,
+			efm = grepfm,
 		}
-		return opts.wintype == 'location' and vim.fn.setloclist(win, {}, 'r', dict) or vim.fn.setqflist({}, 'r', dict)
+		return opts.wintype == 'location' and vim.fn.setloclist(win, {}, 'r', dict) or
+			vim.fn.setqflist({}, 'r', dict)
 	end
-	local grep_result = '' ---@type string
+	local grep_qflist = '' ---@type string
+	local grep_qflist_lines_num = 0
+	local middle_result = '' ---@type string
+	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
+	local winheight = vim.api.nvim_win_get_height(0)
+
+	api.nvim_create_autocmd('CursorMoved', {
+		buffer = 0,
+		callback = function(args)
+			local lnum = vim.fn.getpos('.')[2]
+			if lnum + winheight >= grep_qflist_lines_num and grep_qflist:sub(- #middle_result) ~= middle_result then
+				grep_qflist = grep_qflist .. middle_result
+				middle_result = ''
+				grep_qflist_lines_num = #grep_qflist
+				setlist(vim.split(grep_qflist, '\n'))
+			end
+		end
+	})
+
 	vim.system(grepcmd, {
 		text = true,
 		cwd = cwd,
-		stdout = vim.schedule_wrap(function(_, data)
+		stdout = function(_, data)
 			if not data then return end
-			grep_result = grep_result .. data
-			setlist(vim.split(grep_result, '\n'))
-		end)
+			middle_result = middle_result .. data
+			if grep_qflist_lines_num <= 2 * winheight then
+				if grep_qflist:sub(- #middle_result) ~= middle_result then
+					grep_qflist = grep_qflist .. middle_result
+					middle_result = ''
+					local grep_qflist_lines = vim.split(grep_qflist, '\n')
+					vim.schedule(function() setlist(grep_qflist_lines) end)
+					grep_qflist_lines_num = #grep_qflist_lines
+				end
+			end
+		end
 	}, function(data)
 		print(data.stderr or '')
 	end)
+end
+
+---@param pattern string
+---@param opts { wintype: 'quickfix'|'location'? }
+M.vimgrep = function(pattern, opts)
+	local default_opts = {
+		wintype = 'quickfix',
+	}
+	opts = vim.tbl_deep_extend('force', default_opts, opts)
+	local in_direx_win = vim.bo[api.nvim_win_get_buf(0)].ft == 'direx'
+	vim.cmd[opts.wintype == 'quickfix' and 'vimgrep' or 'lvimgrep'](pattern .. ' ' .. (in_direx_win and '%**' or '**'))
+	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
 end
 
 return M

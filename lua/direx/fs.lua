@@ -3,6 +3,8 @@ local M = {}
 local uv = vim.uv
 local fs = vim.fs
 
+---@param path string
+---@return string
 function M.basename(path)
 	return vim.fs.basename(path:sub(-1) == '/' and path:sub(1, -2) or path)
 end

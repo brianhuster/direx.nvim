@@ -2,7 +2,10 @@ local M = {}
 
 ---@class DirConfigOpts
 ---@field iconfunc? function
+---@field grep? { parse_args: 'shell'|false, timeout: number }
 ---@field set nil
+
+M.grep = { parse_args = false, timeout = false }
 
 ---@param opts DirConfigOpts
 M.set = function(opts)
