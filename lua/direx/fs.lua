@@ -7,6 +7,22 @@ function M.basename(path)
 	return vim.fs.basename(path:sub(-1) == '/' and path:sub(1, -2) or path)
 end
 
+---@param filename string
+---@return boolean
+M.mkfile = function(filename)
+	local dirname = vim.fs.dirname(filename)
+	if vim.fn.isdirectory(dirname) == 0 then
+		local has_parent = M.mkdir(dirname)
+		if not has_parent then
+			vim.notify(
+				("Failed to create %s"):format(dirname),
+				vim.log.levels.ERROR)
+			return false
+		end
+	end
+	return vim.fn.writefile({}, filename) == 0
+end
+
 ---@param path string
 ---@return boolean
 function M.mkdir(path)
@@ -70,6 +86,7 @@ function M.copylink(oldpath, newpath)
 		local success, errname, errmsg = uv.fs_symlink(target, newpath)
 		return not not success
 	end
+	return false
 end
 
 ---@param oldpath string
@@ -86,6 +103,7 @@ function M.copy(oldpath, newpath)
 	elseif type == 'link' then
 		return M.copylink(oldpath, newpath)
 	end
+	return false
 end
 
 ---@param oldname string
@@ -108,7 +126,7 @@ end
 ---@param path string
 ---@return boolean
 function M.remove(path)
-	return vim.fn.isdirectory(path) == 1 and vim.fn.delete(path, 'rf') == 0 or vim.fn.delete(path) == 0
+	return vim.fn.isdirectory(path) == 1 and vim.fn.delete(path, 'rf') == 0 or vim.fn.delete(path, 'rf') == 0
 end
 
 ---@param mode number

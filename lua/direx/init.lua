@@ -182,31 +182,6 @@ function M.paste()
 	end
 end
 
-M.edit = function(filename)
-	local dirname = vim.fs.dirname(filename)
-	if vim.fn.isdirectory(dirname) == 0 then
-		vim.fn.mkdir(dirname, 'p')
-	end
-	if vim.fn.isdirectory(dirname) == 1 then
-		vim.cmd.edit("%" .. filename)
-	end
-end
-
-M.mkdir = function(dirname)
-	ws.willCreateFiles(dirname)
-	local dirpath = vim.fs.normalize(vim.fs.joinpath(api.nvim_buf_get_name(0), dirname))
-	local success = vim.fn.mkdir(dirpath, 'p') == 1
-	if not success then
-		vim.notify(
-			("Failed to create %s"):format(dirpath),
-			vim.log.levels.ERROR)
-	else
-		vim.cmd.edit()
-		moveCursorTo(dirname .. '/')
-		ws.didCreateFiles(dirpath)
-	end
-end
-
 ---@param pattern string
 ---@param opts { wintype: 'quickfix'|'location'? }
 function M.find_files(pattern, opts)
