@@ -225,7 +225,7 @@ function M.grep(pattern, opts)
 	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
 
 	--- Use `:vimgrep` and friends
-	if grepprg == 'internal' then
+	if grepprg == '' or grepprg == 'internal' then
 		return vim.cmd[opts.wintype == 'quickfix' and 'vimgrep' or 'lvimgrep'](pattern ..
 			(in_direx_win and '%**' or '**'))
 	end
@@ -234,7 +234,7 @@ function M.grep(pattern, opts)
 	local grepcmd = vim.split(grepprg, ' ')
 	grepcmd = vim.tbl_map(function(v)
 		return (v == '' or v == '$*') and pattern
-			or (( v == '%' or v == '#' ) and vim.fn.expand(v))
+			or ((v == '%' or v == '#') and vim.fn.expand(v))
 			or v
 	end, grepcmd)
 	local function setlist(list)
