@@ -52,13 +52,21 @@ command('LFindFile', function(cmd)
 	require 'direx'.find_files(cmd.args, { wintype = 'location' })
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
 
-command('Grep', function(cmd)
-	require 'direx'.grep(cmd.args, {})
-end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
-
-command('LGrep', function(cmd)
-	require 'direx'.grep(cmd.args, { wintype = 'location' })
-end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
+-- command('Grep', function(cmd)
+-- 	require 'direx'.grep(cmd.args, {})
+-- end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
+--
+-- command('LGrep', function(cmd)
+-- 	require 'direx'.grep(cmd.args, { wintype = 'location' })
+-- end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
+--
+-- command('VimGrep', function(cmd)
+-- 	require 'direx'.vimgrep(cmd.args, {})
+-- end, { nargs = '+', desc = 'VimGrep <arg> in directory and its subdirectories, then open quickfix window' })
+--
+-- command('LVimGrep', function(cmd)
+-- 	require 'direx'.vimgrep(cmd.args, { wintype = 'location' })
+-- end, { nargs = '+', desc = 'VimGrep <arg> in directory and its subdirectories, then open location window' })
 
 au('BufWritePre', {
 	group = 'FileExplorer',
@@ -85,3 +93,5 @@ au('BufWritePost', {
 		new_created_files[args.match] = false
 	end
 })
+
+

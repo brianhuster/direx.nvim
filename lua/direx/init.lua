@@ -7,9 +7,18 @@ local dirfs = setmetatable({}, { __index = function(_, k) return require('direx.
 ---@type { type: 'copy'|'move', paths: string[] }
 M.pending_operations = {}
 
+---@type vim.SystemObj?
+M.grep_process = nil
+
 ---@param target string
 local function moveCursorTo(target)
 	vim.fn.search('\\V' .. vim.fn.escape(target, '\\') .. '\\$')
+end
+
+function M.killGrepProcess()
+	if M.grep_process and not M.grep_process:is_closing() then
+		M.grep_process:kill('SIGTERM')
+	end
 end
 
 ---@param dir string
@@ -213,6 +222,7 @@ end
 ---@param pattern string
 ---@param opts { wintype: 'quickfix'|'location'?, vimgrep: boolean? }
 function M.grep(pattern, opts)
+	M.killGrepProcess()
 	local grepprg, grepfm, shell, shellcmdflag = vim.o.grepprg, vim.o.grepformat, vim.o.shell, vim.o.shellcmdflag
 	local win = vim.api.nvim_get_current_win()
 	local in_direx_win = vim.bo[api.nvim_win_get_buf(win)].ft == 'direx'
@@ -227,6 +237,18 @@ function M.grep(pattern, opts)
 		return
 	end
 
+	local function setlist(list, action)
+		local dict = {
+			lines = list,
+			title = "Grep " .. pattern .. " from " .. cwd,
+			efm = grepfm,
+		}
+		return opts.wintype == 'location' and vim.fn.setloclist(win, {}, action, dict) or
+			vim.fn.setqflist({}, action, dict)
+	end
+
+	setlist({}, 'r')
+
 	local grepcmd = vim.tbl_map(function(v)
 		return (v == '' or v == '$*') and pattern
 			or ((v:sub(1, 1) == '%' or v:sub(1, 1) == '#' or v:sub(1, 1) == '<') and vim.fn.expand(v))
@@ -235,18 +257,11 @@ function M.grep(pattern, opts)
 	if require('direx.config').grep.parse_args == 'shell' then
 		grepcmd = { shell, shellcmdflag, table.concat(grepcmd, ' ') }
 	end
-	local function setlist(list)
-		local dict = {
-			lines = list,
-			title = "Grep " .. pattern .. " from " .. cwd,
-			efm = grepfm,
-		}
-		return opts.wintype == 'location' and vim.fn.setloclist(win, {}, 'r', dict) or
-			vim.fn.setqflist({}, 'r', dict)
-	end
-	local grep_qflist = '' ---@type string
 	local grep_qflist_lines_num = 0
-	local middle_result = '' ---@type string
+	local temporary = {
+		text = '',
+		sync_with_qflist = false,
+	}
 	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
 	local winheight = vim.api.nvim_win_get_height(0)
 
@@ -254,29 +269,36 @@ function M.grep(pattern, opts)
 		buffer = 0,
 		callback = function(args)
 			local lnum = vim.fn.getpos('.')[2]
-			if lnum + winheight >= grep_qflist_lines_num and grep_qflist:sub(- #middle_result) ~= middle_result then
-				grep_qflist = grep_qflist .. middle_result
-				middle_result = ''
-				grep_qflist_lines_num = #grep_qflist
-				setlist(vim.split(grep_qflist, '\n'))
+			if lnum + winheight >= grep_qflist_lines_num then
+				if not temporary.sync_with_qflist then
+					setlist(vim.split(temporary.text, '\n'), 'a')
+					temporary.sync_with_qflist = true
+					temporary.text = ''
+					grep_qflist_lines_num = vim.fn.line('$')
+				end
 			end
 		end
 	})
 
-	vim.system(grepcmd, {
+	M.grep_process = vim.system(grepcmd, {
 		text = true,
 		cwd = cwd,
 		stdout = function(_, data)
-			if not data then return end
-			middle_result = middle_result .. data
-			if grep_qflist_lines_num <= 2 * winheight then
-				if grep_qflist:sub(- #middle_result) ~= middle_result then
-					grep_qflist = grep_qflist .. middle_result
-					middle_result = ''
-					local grep_qflist_lines = vim.split(grep_qflist, '\n')
-					vim.schedule(function() setlist(grep_qflist_lines) end)
-					grep_qflist_lines_num = #grep_qflist_lines
-				end
+			if not data or data == '' or data == '\n' then return end
+			temporary.text = temporary.text .. data
+			temporary.sync_with_qflist = false
+			if grep_qflist_lines_num < 2 * winheight and not temporary.sync_with_qflist then
+				vim.schedule(function()
+					local list = vim.split(temporary.text, '\n')
+					for i, v in ipairs(list) do
+						if vim.trim(v) == '' then
+							table.remove(list, i)
+						end
+					end
+					setlist(list, 'a')
+					temporary.sync_with_qflist = true
+					temporary.text = ''
+				end)
 			end
 		end
 	}, function(data)
