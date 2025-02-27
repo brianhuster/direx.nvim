@@ -233,12 +233,9 @@ function M.grep(pattern, opts)
 	--- Use external grep
 	local grepcmd = vim.split(grepprg, ' ')
 	grepcmd = vim.tbl_map(function(v)
-		if v == '' or v == '%s' then
-			return pattern
-		elseif v == '%' or v == '#' then
-			return vim.fn.expand(v)
-		end
-		return v
+		return (v == '' or v == '$*') and pattern
+			or (( v == '%' or v == '#' ) and vim.fn.expand(v))
+			or v
 	end, grepcmd)
 	local function setlist(list)
 		local dict = {
