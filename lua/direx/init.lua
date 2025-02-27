@@ -213,7 +213,7 @@ end
 ---@param pattern string
 ---@param opts { wintype: 'quickfix'|'location'? }
 function M.grep(pattern, opts)
-	local grepcmd = vim.split(vim.o.grepprg, ' ')
+	local grepprg = vim.o.grepprg
 	local win = vim.api.nvim_get_current_win()
 	local in_direx_win = vim.bo[api.nvim_win_get_buf(win)].ft == 'direx'
 	local cwd = in_direx_win and api.nvim_buf_get_name(0) or vim.uv.cwd()
@@ -221,11 +221,17 @@ function M.grep(pattern, opts)
 		wintype = 'quickfix',
 	}
 	opts = vim.tbl_deep_extend('force', default_opts, opts)
-	if #grepcmd == 0 then
-		vim.notify('No grepprg set', vim.log.levels.ERROR)
-		return
+
+	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
+
+	--- Use `:vimgrep` and friends
+	if grepprg == 'internal' then
+		return vim.cmd[opts.wintype == 'quickfix' and 'vimgrep' or 'lvimgrep'](pattern ..
+			(in_direx_win and '%**' or '**'))
 	end
 
+	--- Use external grep
+	local grepcmd = vim.split(grepprg, ' ')
 	grepcmd = vim.tbl_map(function(v)
 		if v == '' or v == '%s' then
 			return pattern
@@ -234,7 +240,6 @@ function M.grep(pattern, opts)
 		end
 		return v
 	end, grepcmd)
-	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
 	local function setlist(list)
 		local dict = {
 			lines = list,
