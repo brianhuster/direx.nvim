@@ -15,4 +15,4 @@ Or you can install it using native `packages` feature
 git clone https://github.com/brianhuster/direx.nvim.git ~/.local/share/nvim/site/pack/plugins/start/direx.nvim
 ```
 
-See [documentation](https://github.com/brianhuster/direx.nvim/blob/main/doc/direx.txt) for information about configuration and usage.
+See [`:h direx`](https://github.com/brianhuster/direx.nvim/blob/main/doc/direx.txt) for information about configuration and usage.
