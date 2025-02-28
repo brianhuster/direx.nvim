@@ -226,7 +226,8 @@ function M.grep(pattern, opts)
 	local grepprg, grepfm, shell, shellcmdflag = vim.o.grepprg, vim.o.grepformat, vim.o.shell, vim.o.shellcmdflag
 	local win = vim.api.nvim_get_current_win()
 	local in_direx_win = vim.bo[api.nvim_win_get_buf(win)].ft == 'direx'
-	local cwd = in_direx_win and api.nvim_buf_get_name(0) or vim.uv.cwd()
+	local cwd = in_direx_win and api.nvim_buf_get_name(0) or vim.fn.getcwd()
+	cwd = vim.fs.relpath(vim.fn.getcwd(), cwd) or cwd ---@diagnostic disable-line: cast-local-type
 	local default_opts = {
 		wintype = 'quickfix',
 	}
@@ -238,6 +239,7 @@ function M.grep(pattern, opts)
 	end
 
 	local function setlist(list, action)
+		list = vim.tbl_filter(function(v) return v ~= '' end, list)
 		local dict = {
 			lines = list,
 			title = "Grep " .. pattern .. " from " .. cwd,
@@ -254,12 +256,12 @@ function M.grep(pattern, opts)
 			or ((v:sub(1, 1) == '%' or v:sub(1, 1) == '#' or v:sub(1, 1) == '<') and vim.fn.expand(v))
 			or v
 	end, vim.split(grepprg, ' '))
-	if require('direx.config').grep.parse_args == 'shell' then
+	if parse_args == 'shell' then
 		grepcmd = { shell, shellcmdflag, table.concat(grepcmd, ' ') }
 	end
 	local grep_qflist_lines_num = 0
 	local temporary = {
-		text = '',
+		lines = {},
 		sync_with_qflist = false,
 	}
 	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
@@ -271,7 +273,13 @@ function M.grep(pattern, opts)
 			local lnum = vim.fn.getpos('.')[2]
 			if lnum + winheight >= grep_qflist_lines_num then
 				if not temporary.sync_with_qflist then
-					setlist(vim.split(temporary.text, '\n'), 'a')
+					local list = temporary.lines
+					for i, v in ipairs(list) do
+						if v ~= '' then
+							list[i] = vim.fs.joinpath(cwd, v)
+						end
+					end
+					setlist(list, 'a')
 					temporary.sync_with_qflist = true
 					temporary.text = ''
 					grep_qflist_lines_num = vim.fn.line('$')
@@ -283,39 +291,30 @@ function M.grep(pattern, opts)
 	M.grep_process = vim.system(grepcmd, {
 		text = true,
 		cwd = cwd,
+		timeout = 3000,
 		stdout = function(_, data)
 			if not data or data == '' or data == '\n' then return end
-			temporary.text = temporary.text .. data
+			local datalist = vim.split(data, '\n')
+			datalist = vim.tbl_map(function(v) return v:sub(1, 200) end, datalist)
+			temporary.lines = vim.list_extend(temporary.lines, datalist)
 			temporary.sync_with_qflist = false
 			if grep_qflist_lines_num < 2 * winheight and not temporary.sync_with_qflist then
 				vim.schedule(function()
-					local list = vim.split(temporary.text, '\n')
+					local list = temporary.lines
 					for i, v in ipairs(list) do
-						if vim.trim(v) == '' then
-							table.remove(list, i)
+						if v ~= '' then
+							list[i] = vim.fs.joinpath(cwd, v)
 						end
 					end
 					setlist(list, 'a')
 					temporary.sync_with_qflist = true
-					temporary.text = ''
+					temporary.lines = {}
 				end)
 			end
 		end
 	}, function(data)
 		print(data.stderr or '')
 	end)
-end
-
----@param pattern string
----@param opts { wintype: 'quickfix'|'location'? }
-M.vimgrep = function(pattern, opts)
-	local default_opts = {
-		wintype = 'quickfix',
-	}
-	opts = vim.tbl_deep_extend('force', default_opts, opts)
-	local in_direx_win = vim.bo[api.nvim_win_get_buf(0)].ft == 'direx'
-	vim.cmd[opts.wintype == 'quickfix' and 'vimgrep' or 'lvimgrep'](pattern .. ' ' .. (in_direx_win and '%**' or '**'))
-	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
 end
 
 return M

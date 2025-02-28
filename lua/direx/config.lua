@@ -5,7 +5,7 @@ local M = {}
 ---@field grep? { parse_args: 'shell'|false, timeout: number }
 ---@field set nil
 
-M.grep = { parse_args = false, timeout = false }
+M.grep = { parse_args = 'shell' }
 
 ---@param opts DirConfigOpts
 M.set = function(opts)

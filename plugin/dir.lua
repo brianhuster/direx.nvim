@@ -31,8 +31,6 @@ au({ 'BufFilePost', 'ShellCmdPost' }, {
 	end
 })
 
-vim.o.grepprg = 'rg --vimgrep --max-columns=100 '
-
 vim.keymap.set('n', '<Plug>(direx-up)', function()
 	vim.w.prev_bufname = api.nvim_buf_get_name(0)
 	edit(vim.fs.dirname(vim.fs.normalize(api.nvim_buf_get_name(0))))
@@ -51,22 +49,6 @@ end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdir
 command('LFindFile', function(cmd)
 	require 'direx'.find_files(cmd.args, { wintype = 'location' })
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
-
--- command('Grep', function(cmd)
--- 	require 'direx'.grep(cmd.args, {})
--- end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
---
--- command('LGrep', function(cmd)
--- 	require 'direx'.grep(cmd.args, { wintype = 'location' })
--- end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
---
--- command('VimGrep', function(cmd)
--- 	require 'direx'.vimgrep(cmd.args, {})
--- end, { nargs = '+', desc = 'VimGrep <arg> in directory and its subdirectories, then open quickfix window' })
---
--- command('LVimGrep', function(cmd)
--- 	require 'direx'.vimgrep(cmd.args, { wintype = 'location' })
--- end, { nargs = '+', desc = 'VimGrep <arg> in directory and its subdirectories, then open location window' })
 
 au('BufWritePre', {
 	group = 'FileExplorer',
@@ -94,4 +76,36 @@ au('BufWritePost', {
 	end
 })
 
+local function get_grep_pattern(cmd)
+	if cmd.args then return cmd.args end
+	local pattern
+	if cmd.range > 0 then
+		local pos1, pos2 = api.nvim_buf_get_mark(0, '<'), vim.api.nvim_buf_get_mark(0, '>')
+		pattern = api.nvim_buf_get_text(0, pos1[1] - 1, pos1[2], pos2[1] - 1, pos2[2], {})
+		if type(pattern) == 'table' then
+			pattern = table.concat(pattern, '\n')
+		end
+	else
+		pattern =  vim.fn.expand('<cword>')
+	end
+	if require('direx.config').grep.parse_args == 'shell' then
+		pattern = vim.fn.shellescape(pattern)
+	end
+	return pattern
+end
 
+command('Grep', function(cmd)
+	local pattern = get_grep_pattern(cmd)
+	require 'direx'.grep(pattern, {})
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
+
+command('LGrep', function(cmd)
+	local pattern = get_grep_pattern(cmd)
+	require 'direx'.grep(pattern, { wintype = 'location' })
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
+
+vim.api.nvim_create_autocmd('VimLeavePre', {
+	callback = function()
+		require 'direx'.killGrepProcess()
+	end
+})
