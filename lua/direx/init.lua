@@ -22,10 +22,14 @@ function M.killGrepProcess()
 end
 
 ---@param dir string
----@param bufnr number
+---@param bufnr number?
 function M.open(bufnr, dir)
+	if not bufnr then
+		vim.cmd.enew()
+		bufnr = vim.api.nvim_get_current_buf()
+	end
 	vim.validate('path', dir, 'string')
-	dir = vim.fs.abspath(dir)
+	dir = vim.fs.normalize(dir)
 	if dir:sub(-1) ~= '/' then
 		dir = dir .. '/'
 	end
@@ -192,20 +196,20 @@ function M.paste()
 end
 
 ---@param pattern string
----@param opts { wintype: 'quickfix'|'location'? }
-function M.find_files(pattern, opts)
+---@param opts { wintype: 'quickfix'|'location'?, from_dir: string? }
+function M.find(pattern, opts)
 	local default_opts = {
 		wintype = 'quickfix',
+		from_dir = vim.fn.getcwd(),
 	}
-	local in_direx_win = vim.bo[api.nvim_win_get_buf(0)].ft == 'direx'
 	opts = vim.tbl_deep_extend('force', default_opts, opts)
-	local files = vim.fn.glob((in_direx_win and '%**/' or './**/') .. pattern,
+	local files = vim.fn.glob(vim.fs.joinpath(opts.from_dir, '**/') .. pattern,
 		false, true)
 	if #files == 0 then
 		vim.notify('No files found', vim.log.levels.WARN)
 		return
 	end
-	local dir = in_direx_win and api.nvim_buf_get_name(0) or vim.uv.cwd()
+	local dir = opts.from_dir
 	---@param wintype 'location'|'quickfix'
 	---@param ... any see :h setqflist()
 	---@return boolean
@@ -220,13 +224,12 @@ function M.find_files(pattern, opts)
 end
 
 ---@param pattern string
----@param opts { wintype: 'quickfix'|'location'?, vimgrep: boolean? }
+---@param opts { wintype: 'quickfix'|'location'?, from_dir: string? }
 function M.grep(pattern, opts)
 	M.killGrepProcess()
 	local grepprg, grepfm, shell, shellcmdflag = vim.o.grepprg, vim.o.grepformat, vim.o.shell, vim.o.shellcmdflag
 	local win = vim.api.nvim_get_current_win()
-	local in_direx_win = vim.bo[api.nvim_win_get_buf(win)].ft == 'direx'
-	local cwd = in_direx_win and api.nvim_buf_get_name(0) or vim.fn.getcwd()
+	local cwd = opts.from_dir or vim.fn.getcwd()
 	cwd = vim.fs.relpath(vim.fn.getcwd(), cwd) or cwd ---@diagnostic disable-line: cast-local-type
 	local default_opts = {
 		wintype = 'quickfix',
@@ -234,7 +237,7 @@ function M.grep(pattern, opts)
 	opts = vim.tbl_deep_extend('force', default_opts, opts)
 
 	if #grepprg == 0 or grepprg == 'internal' then
-		vim.notify('No grepprg set. If you want to use internal grep, use :VimGrep or :LVimGrep', vim.log.levels.WARN)
+		vim.notify('No grepprg set', vim.log.levels.WARN)
 		return
 	end
 
@@ -256,7 +259,7 @@ function M.grep(pattern, opts)
 			or ((v:sub(1, 1) == '%' or v:sub(1, 1) == '#' or v:sub(1, 1) == '<') and vim.fn.expand(v))
 			or v
 	end, vim.split(grepprg, ' '))
-	if parse_args == 'shell' then
+	if require('direx.config').grep.parse_args == 'shell' then
 		grepcmd = { shell, shellcmdflag, table.concat(grepcmd, ' ') }
 	end
 	local grep_qflist_lines_num = 0

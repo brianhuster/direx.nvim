@@ -51,6 +51,7 @@ bufmap('n', '<CR>', function() vim.cmd.edit(api.nvim_get_current_line()) end,
 bufmap('n', 'grn', function() dir.rename() end, { desc = 'Rename path under cursor' })
 bufmap('n', 'K', function() dir.hover() end, { desc = 'View file or folder info' })
 bufmap('n', 'P', function() dir.preview(api.nvim_get_current_line()) end, { desc = 'Preview file or directory' })
+bufmap('n', 'g?', '<cmd>help direx-mappings<CR>')
 
 bufmap('n', '!', function()
 	feedkeys(':<C-U><Space>')
@@ -101,6 +102,14 @@ bufcmd(buf, 'Trash', function(args)
 	dir.trash(lines, { confirm = args.bang == false })
 end, { range = true, bang = true, desc = 'Trash selected files and directories' })
 
+bufcmd(buf, 'LFind', function(cmd)
+	require 'direx'.find_files(cmd.args, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
+end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
+
+bufcmd(buf, 'LGrep', function(cmd)
+	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
+	require 'direx'.grep(pattern, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
 
 local augroup = vim.api.nvim_create_augroup('ft-directory', { clear = true })
 vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
@@ -113,7 +122,7 @@ vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 
 vim.b.undo_ftplugin = table.concat({
 	"setl conceallevel< concealcursor< bufhidden< buftype< swapfile< wrap<",
-	"silent! nunmap <CR> <2-LeftMouse> ! K P grn",
-	"silent! delcommand -buffer Shdo Cut Copy Paste",
+	"silent! nunmap <CR> ! K P grn g?",
+	"silent! delcommand -buffer Shdo Cut Copy Paste Trash Remove LFind LGrep",
 	"augroup ft-directory | au! | augroup END",
 }, "\n")

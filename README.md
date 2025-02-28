@@ -4,8 +4,15 @@ A simple file explorer for Neovim, inspired by [vim-dirvish](https://github.com/
 
 # Installation
 
-Install with your favorite package manager:
+You can install the plugin using your favorite plugin manager, for example `vim-plug`:
 
-```lua
-use 'brianhuster/dir.nvim'
+```vim
+Plug 'brianhuster/direx.nvim'
 ```
+
+Or you can install it using native `packages` feature
+```sh
+git clone https://github.com/brianhuster/direx.nvim.git ~/.local/share/nvim/site/pack/plugins/start/direx.nvim
+```
+
+See [documentation](https://github.com/brianhuster/direx.nvim/blob/main/doc/direx.txt) for information about configuration and usage.

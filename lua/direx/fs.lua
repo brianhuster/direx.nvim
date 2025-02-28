@@ -9,6 +9,10 @@ function M.basename(path)
 	return vim.fs.basename(path:sub(-1) == '/' and path:sub(1, -2) or path)
 end
 
+function M.parent(path)
+	return vim.fs.dirname(vim.fs.normalize(path))
+end
+
 ---@param filename string
 ---@return boolean
 M.mkfile = function(filename)
@@ -178,13 +182,16 @@ end
 ---@see https://specifications.freedesktop.org/trash-spec/latest/
 ---@param path string
 function M.trash(path)
-	if vim.fn.has('win32') == 1 or vim.fn.has('mac') then
-		if vim.fn.executable('trash') then
-			return vim.system({ 'trash', vim.fn.shellescape(path) }, { text = true }, function(obj)
-				print(obj.stderr)
-				print(obj.stdout)
-			end)
-		end
+	if vim.fn.executable('trash') then
+		return vim.system({ 'trash', vim.fn.shellescape(path) }, { text = true }, function(obj)
+			print(obj.stderr)
+			print(obj.stdout)
+		end)
+	end
+
+	if vim.fn.has('win32') == 1 or vim.fn.has('mac') == 1 then
+		vim.notify('Requires trash-cli', vim.log.levels.ERROR)
+		return
 	end
 
 	path = path:sub(-1) == '/' and path:sub(1, -2) or path
