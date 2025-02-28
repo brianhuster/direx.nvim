@@ -1,2 +1,2 @@
 syntax match Directory ".*\/$"
-syntax match DirexParent ".*/\ze[^/]\+/\?$" conceal
+syntax match Conceal ".*/\ze[^/]\+/\?$" conceal

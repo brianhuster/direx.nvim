@@ -103,7 +103,7 @@ bufcmd(buf, 'Trash', function(args)
 end, { range = true, bang = true, desc = 'Trash selected files and directories' })
 
 bufcmd(buf, 'LFind', function(cmd)
-	require 'direx'.find_files(cmd.args, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
+	require 'direx'.find(cmd.args, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
 
 bufcmd(buf, 'LGrep', function(cmd)

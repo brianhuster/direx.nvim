@@ -49,7 +49,7 @@ command('Direx', function(cmd)
 end, { nargs = '*' })
 
 command('Find', function(cmd)
-	require 'direx'.find_files(cmd.args, {})
+	require 'direx'.find(cmd.args, {})
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open quickfix window' })
 
 command('Grep', function(cmd)
