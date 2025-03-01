@@ -32,16 +32,21 @@ The following options are available:
 `opts.default` (boolean) ~
 	Use Direx as the default plugin for opening directories. Default: `true`
 
-`opts.grep` ({ parse_args: "shell"|false, cmd: string, format: string }) ~
-    Default: >lua
-        { parse_args = "shell" }
-<   See |:Grep| for information about `parse_args` field. Default: `"shell"`
+`opts.grep` (table) ~
+    A table with the following fields:
+    • `parse_args` (`"shell"|false`) ~
+        Default: `"shell"`
+	   	See |:Grep| for information about `parse_args` field.
+	• `timeout` (number?) ~
+		Default: `nil`
+		Timeout for the process in milliseconds.
 
 `opts.iconfunc` (fun(path: string): {icon: string, hl: string}) ~
     Function to add icons to direx buffer. Accepts path of file/directory as
     argument and returns a table with `icon` and `hl` keys. Default: `nil`
 
     For example >lua
+	{
         iconfunc = function(path)
             if path:sub(-1) == '/' then
                 return { icon = ' ', hl = 'Directory' }
@@ -49,6 +54,7 @@ The following options are available:
                 return { icon = '󰈔 ', hl = 'Normal' }
             end
         end
+	}
 <
 												*direx-configuration-mappings*
 Key mappings can be configured by mapping the corresponding

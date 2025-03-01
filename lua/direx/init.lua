@@ -314,10 +314,11 @@ function M.grep(pattern, opts)
 		end
 	})
 
+
 	M.grep_process = vim.system(grepcmd, {
 		text = true,
 		cwd = cwd,
-		timeout = 3000,
+		timeout = require('direx.config').grep.timeout,
 		stdout = function(_, data)
 			if not data or data == '' or data == '\n' then return end
 			local datalist = vim.split(data, '\n')
