@@ -92,7 +92,7 @@ Find {pattern}                                          *:Find* *direx-:Find*
 
     Note: If your |'grepprg'| uses `rg`, it is recommended to add arguments
     `-j1` or limit `--max-columns` to a positive number to avoid memory issues.
-    See this issue https://github.com/BurntSushi/ripgrep/issues/2505
+    See https://github.com/BurntSushi/ripgrep/issues/2505 and `:Man rg`
 
 
 BUFFER LOCAL ~
@@ -118,8 +118,8 @@ Paste                                                           *direx-:Paste*
     cli if available, otherwise fallback to built-in implementation based on
     FreeDesktop Trash Spec (https://www.freedesktop.org/wiki/Specifications/trash-spec)
 
-    Note: The built-in implementation is only supported in Desktop
-    Environments that support FreeDesktop Trash Spec, such as GNOME, KDE, Xfce
+	Note: The built-in implementation only works in Desktop Environments that
+	support FreeDesktop Trash Spec, such as GNOME, KDE, Xfce
 
     Also trigger `workspace/willDeleteFiles` and `workspace/didDeleteFiles`
     LSP method.
@@ -173,7 +173,7 @@ Global ~
 Buffer local ~
 
 These mappings are only available in buffer with filetype `direx`.
-    g?                          Show this help
+    g?                          Show help for mappings
 
     <CR>                        Open the file/directory in the current line
 
@@ -194,7 +194,7 @@ buffer opened by |:Find| and |:LFind|
 ==============================================================================
 FAQ                                                            *direx-faq*
 
-Creating file and directory, change |cwd| with Direx ~
+Creating file and directory with Direx ~
 
 Direx doesn't provide any commands for creating file or directory, but, you
 can use |:e| and |:w| to create a file. For example, if you are in a Direx
@@ -206,9 +206,6 @@ buffer named `~/.config/nvim/`, you can create file
 Similarly, you can create a directory, for example `~/.config/nvim/lua` using
 shell command like `mkdir`: >vim
 	:!mkdir %lua
-<
-To change current working directory to the directory of the current buffer >vim
-	:cd %
 <
 See also |cmdline-special|, |expand()|, |filename-modifiers|.
 
@@ -226,5 +223,16 @@ can use |:e| to reload the buffer.
 Possibly in the future, Direx will support a way to mark files/directories for
 operations.
 
+How to open Direx in a split? ~
+
+Combine with |:split| or |:vsplit|
+For example: >vim
+	:split | Direx
+	:vsplit | Direx
+<
+You can also create commands >vim
+	command! -nargs=* DirexSplit :split | Direx <args>
+	command! -nargs=* DirexVSplit :vsplit | Direx <args>
+<
 ==============================================================================
  vim:tw=78:ts=4:sw=4:et:ft=help:norl:

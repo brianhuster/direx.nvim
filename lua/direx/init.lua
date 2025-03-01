@@ -269,6 +269,7 @@ function M.grep(pattern, opts)
 			lines = list,
 			title = "Grep " .. pattern .. " from " .. cwd,
 			efm = grepfm,
+			quickfixtextfunc = ""
 		}
 		return opts.wintype == 'location' and vim.fn.setloclist(win, {}, action, dict) or
 			vim.fn.setqflist({}, action, dict)

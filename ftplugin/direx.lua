@@ -61,7 +61,7 @@ bufcmd(buf, 'LGrep', function(cmd)
 	require 'direx'.grep(pattern, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
 end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
 
-local augroup = vim.api.nvim_create_augroup('ft-directory', { clear = true })
+local augroup = vim.api.nvim_create_augroup('DirexBuf', { clear = true })
 vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 	buffer = buf,
 	group = augroup,
@@ -74,5 +74,5 @@ vim.b.undo_ftplugin = table.concat({
 	"setl bufhidden< buftype< swapfile<",
 	"silent! nunmap <CR> grn g?",
 	"silent! delcommand -buffer Cut Copy Paste Trash Remove LFind LGrep",
-	"augroup ft-directory | au! | augroup END",
+	"augroup DirexBuf | au! | augroup END",
 }, "\n")
