@@ -172,29 +172,34 @@ quickfix/location list buffers opened by |:Find| and |:LFind| ~
 MAPPINGS                                                    *direx-mappings*
 
 Global ~
-															*direx-minus*
-    `-` or `<minus>` or <Plug>(direx-up)
-				                Open Direx in the parent directory
+	<Plug>(direx-up)							*direx-minus* *<Plug>(direx-up)*
+	-			                Open Direx in the parent directory
 
 Buffer local ~
 
 These mappings are only available in buffer with filetype `direx`.
+															*direx-g?*
     g?                          Show help for mappings
 
+												*direx-<cr>* *direx-<Enter>*
     <CR>                        Open the file/directory in the current line
 
+															*direx-grn*
     grn                         Rename the file/directory in the current line.
                                 Also trigger `workspace/willRenameFiles` and
                                 `workspace/didRenameFiles` LSP method
 
 These mappings are available in both `direx` buffer and quickfix/location list
 buffer opened by |:Find| and |:LFind|
+															*direx-K*
     K                           View file/directory hover information
 
-    P                           Preview the file/directory in the current.
-
+	P											*direx-P* *<Plug>(direx-preview)*
+    <Plug>(direx-preview)		Preview the file/directory in the current line
+															*direx-!*
     !                           Inserts ":! {path}" into the command-line.
 
+															*direx-v_!*
     {Visual}!                   Inserts ":Shdo  {}" into the command-line.
 
 ==============================================================================

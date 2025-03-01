@@ -18,7 +18,11 @@ local function get_lines_from_cmd_range(args)
 end
 
 bufmap('n', 'K', function() dir.hover() end, { desc = 'View file or folder info' })
-bufmap('n', 'P', function() dir.preview(api.nvim_get_current_line()) end, { desc = 'Preview file or directory' })
+bufmap('n', '<Plug>(direx-preview)', function() dir.preview(api.nvim_get_current_line()) end,
+	{ desc = 'Preview file or directory' })
+if vim.fn.hasmapto('<Plug>(direx-preview)', 'n') == 0 then
+	bufmap('n', 'P', '<Plug>(direx-preview)', { desc = 'Preview file or directory' })
+end
 bufmap('n', '!', function()
 	feedkeys(':<C-U><Space>')
 	local path = vim.fn.shellescape(api.nvim_get_current_line(), true)
