@@ -216,7 +216,7 @@ Use either |:e| or |:Direx|
 How to do an operation on multiple files in non-adjacent lines? ~
 
 Remember that you can slice, dice, and smash any Direx buffer without
-modifying the filesystem. You can just use |d| to remove the lines in between
+modifying the filesystem? You can just use |d| to remove the lines in between
 that you don’t want to be included in the operation. After the operation, you
 can use |:e| to reload the buffer.
 
