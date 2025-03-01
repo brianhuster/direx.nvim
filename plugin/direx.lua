@@ -26,9 +26,9 @@ end
 au({ 'BufFilePost', 'ShellCmdPost' }, {
 	group = 'FileExplorer',
 	nested = true,
-	callback = function(args)
+	callback = function(_)
 		if vim.bo.filetype == 'direx' then
-			vim.cmd.edit()
+			vim.cmd.Direx()
 		end
 	end
 })

@@ -9,8 +9,16 @@ function M.basename(path)
 	return vim.fs.basename(path:sub(-1) == '/' and path:sub(1, -2) or path)
 end
 
+---@param path string
+---@return string
 function M.parent(path)
 	return vim.fs.dirname(vim.fs.normalize(path))
+end
+
+---@param path string
+---@return boolean
+function M.isdirectory(path)
+	return vim.fn.isdirectory(path) == 1
 end
 
 ---@param filename string

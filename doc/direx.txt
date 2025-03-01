@@ -10,15 +10,6 @@ OVERVIEW                                                    *direx-overview*
 Direx is a file explorer for Neovim. It is inspired by |vim-dirvish| by Justin M
 Keyes, and provides commands to modify file system and integration with |LSP|.
 
-Getting started ~
-
-To open a Direx buffer to view directory, use `:e path/to/directory`. For
-example: >vim
-	:e ~/.config/nvim
-<
-Or you can also press `-` from a file to open its parent directory in Direx.
-See |direx-mappings|
-
 Concept ~
 
 Similar to |vim-dirvish|, a Direx buffer only contains a list of paths, and a
@@ -29,8 +20,6 @@ current working directory to the directory opened in a Direx buffer with >vim
 It's totally fine to slice, dice, and smash any Direx buffer: it will not
 modify the filesystem. To actually modify the filesystem, you need to use one
 of the |direx-commands| or |direx-mappings| that can do that.
-
-See also |direx-tips| for some tips from this concept.
 
 ==============================================================================
 CONFIGURATION                                           *direx-configuration*
@@ -43,7 +32,7 @@ The following options are available:
 `opts.default` (boolean) ~
 	Use Direx as the default plugin for opening directories. Default: `true`
 
-`opts.grep` ({ parse_args: "shell"|false }) ~
+`opts.grep` ({ parse_args: "shell"|false, cmd: string, format: string }) ~
     Default: >lua
         { parse_args = "shell" }
 <   See |:Grep| for information about `parse_args` field. Default: `"shell"`
@@ -62,7 +51,7 @@ The following options are available:
         end
 <
 												*direx-configuration-mappings*
-Global mappings can be configured by mapping the corresponding
+Key mappings can be configured by mapping the corresponding
 `<Plug>(direx-<name>)` key to a custom key sequence (see |direx-mappings|).
 For example, to use `<BS>` to go up a directory instead of the default
 `<minus>`, add the following to your `init.lua`: >lua
@@ -108,16 +97,7 @@ Find {pattern}                                          *:Find* *direx-:Find*
 
 BUFFER LOCAL ~
 
-[range]Shdo {cmd}                                              *direx-:Shdo*
-
-    Generates a shell script with {cmd} applied to [range] and the
-    respective filepath inserted wherever {} appears in {cmd}. The
-    window-local directory is initialized to the current Dirvish
-    directory.
-
-    For example, to rename a list of visual-selected files: >vim
-        :'<,'>Shdo mv {} {}-copy.txt
-<    Run the script with ":!%".
+The following commands are only available in the Direx buffer. ~
 
 [range]Cut                                                      *direx-:Cut*
 [range]Copy                                                     *direx-:Copy*
@@ -168,30 +148,51 @@ LGrep {args}                                                    *direx-:LGrep*
     directory to search from, and |location-list| is used instead of
     |quickfix|. Doesn't support |range|
 
+The following commands are available in both Direx buffers and ~
+quickfix/location list buffers opened by |:Find| and |:LFind| ~
+
+[range]Shdo {cmd}                                              *direx-:Shdo*
+
+    Generates a shell script with {cmd} applied to [range] and the
+    respective filepath inserted wherever {} appears in {cmd}. The
+    window-local directory is initialized to the current Dirvish
+    directory.
+
+    For example, to rename a list of visual-selected files: >vim
+        :'<,'>Shdo mv {} {}-copy.txt
+<    Run the script with ":!%".
+
 ==============================================================================
 MAPPINGS                                                    *direx-mappings*
 
 Global ~
-
+															*direx-minus*
     `-` or `<minus>` or <Plug>(direx-up)
 				                Open Direx in the parent directory
 
 Buffer local ~
 
 These mappings are only available in buffer with filetype `direx`.
-
     g?                          Show this help
+
     <CR>                        Open the file/directory in the current line
-    K                           View file/directory hover information
-    P                           Preview the file/directory in the current line
+
     grn                         Rename the file/directory in the current line.
                                 Also trigger `workspace/willRenameFiles` and
                                 `workspace/didRenameFiles` LSP method
+
+These mappings are available in both `direx` buffer and quickfix/location list
+buffer opened by |:Find| and |:LFind|
+    K                           View file/directory hover information
+
+    P                           Preview the file/directory in the current.
+
     !                           Inserts ":! {path}" into the command-line.
+
     {Visual}!                   Inserts ":Shdo  {}" into the command-line.
 
 ==============================================================================
-Tips                                                            *direx-tips*
+FAQ                                                            *direx-faq*
 
 Creating file and directory, change |cwd| with Direx ~
 
@@ -210,6 +211,10 @@ To change current working directory to the directory of the current buffer >vim
 	:cd %
 <
 See also |cmdline-special|, |expand()|, |filename-modifiers|.
+
+How to reload Direx buffer? ~
+
+Use either |:e| or |:Direx|
 
 How to do an operation on multiple files in non-adjacent lines? ~
 

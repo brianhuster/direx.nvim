@@ -62,8 +62,11 @@ function M.rename()
 end
 
 --- Use for `K` mapping
-function M.hover()
-	local path = api.nvim_get_current_line()
+--- @param path string?
+function M.hover(path)
+	if not path then
+		path = api.nvim_get_current_line()
+	end
 	local stat = vim.uv.fs_stat(path)
 	if not stat then
 		return
@@ -209,18 +212,37 @@ function M.find(pattern, opts)
 		vim.notify('No files found', vim.log.levels.WARN)
 		return
 	end
-	local dir = opts.from_dir
+	local dir = opts.from_dir or vim.fn.getcwd()
+	if dir:sub(-1) ~= '/' then
+		dir = dir .. '/'
+	end
 	---@param wintype 'location'|'quickfix'
 	---@param ... any see :h setqflist()
 	---@return boolean
 	local setlist = function(wintype, ...)
 		return (wintype == 'location' and vim.fn.setloclist(0, ...) or vim.fn.setqflist(...)) == 0
 	end
+	local getlist = function(wintype, ...)
+		return wintype == 'location' and vim.fn.getloclist(0, ...) or vim.fn.getqflist(...)
+	end
 	setlist(opts.wintype, {}, 'r', {
-		lines = files, efm = '%f', title = 'Find ' .. pattern .. ' from ' .. dir
+		lines = files,
+		efm = '%f',
+		title = 'Find ' .. pattern .. ' from ' .. dir,
+		quickfixtextfunc = function(info)
+			local items = getlist(opts.wintype, { id = info.id, items = 1 }).items
+			local l = {}
+			for idx = info.start_idx, info.end_idx do
+				local bufname = api.nvim_buf_get_name(items[idx].bufnr)
+				table.insert(l, require('direx.fs').isdirectory(bufname) and bufname .. '/' or bufname)
+			end
+			return l
+		end
 	})
 	vim.cmd(opts.wintype == 'location' and 'lopen' or 'copen')
-	vim.bo.ft = 'direxfindfile'
+	vim.b.from_dir = dir
+	vim.cmd.runtime 'syntax/direxfind.vim'
+	vim.cmd.runtime 'ftplugin/direx_find.lua'
 end
 
 ---@param pattern string
