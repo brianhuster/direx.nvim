@@ -196,6 +196,7 @@ buffer opened by |:Find| and |:LFind|
 
 	P											*direx-P* *<Plug>(direx-preview)*
     <Plug>(direx-preview)		Preview the file/directory in the current line
+
 															*direx-!*
     !                           Inserts ":! {path}" into the command-line.
 
