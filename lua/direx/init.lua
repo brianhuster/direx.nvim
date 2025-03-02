@@ -24,14 +24,17 @@ end
 ---@param dir string
 ---@param bufnr number?
 function M.open(bufnr, dir)
-	if not bufnr then
-		vim.cmd.enew()
-		bufnr = vim.api.nvim_get_current_buf()
+	if vim.o.autochdir then
+		vim.notify("Direx may not work properly with 'autochdir', please turn it off", vim.log.levels.WARN)
 	end
 	vim.validate('path', dir, 'string')
 	dir = vim.fs.normalize(dir)
 	if dir:sub(-1) ~= '/' then
 		dir = dir .. '/'
+	end
+
+	if not bufnr then
+		bufnr = vim.fn.bufnr(dir, true)
 	end
 
 	vim.api.nvim_buf_set_name(bufnr, dir)
