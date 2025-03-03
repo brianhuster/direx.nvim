@@ -81,6 +81,9 @@ Find {pattern}                                          *:Find* *direx-:Find*
     Find files/directories matching {pattern} from the |current-directory|.
     Show results in a |quickfix| list.
 
+LFind {pattern}                                        *:LFind* *direx-:LFind*
+	Same as |:Find|, but open the results in |location-list|.
+
 [range]Grep {args}                                      *:Grep* *direx-:Grep*
 
     Use external grep tool set by |'grepprg'| and |'grepformat'| to search for
@@ -100,6 +103,8 @@ Find {pattern}                                          *:Find* *direx-:Find*
     `-j1` or limit `--max-columns` to a positive number to avoid memory issues.
     See https://github.com/BurntSushi/ripgrep/issues/2505 and `:Man rg`
 
+[range]LGrep {args}                                    *:LGrep* *direx-:LGrep*
+	Same as |:Grep|, but open the results in |location-list|.
 
 BUFFER LOCAL ~
 
@@ -144,15 +149,23 @@ Paste                                                           *direx-:Paste*
     A confirmation prompt will be shown before the operation is executed. Add
     bang to execute without confirmation.
 
-LFind {pattern}                                                 *direx-:LFind*
+DirexFind {pattern}                                                 *direx-:LFind*
     Same as |:Find|, except that the current buffer name is used as the
     directory to search from, and |location-list| is used instead of
     |quickfix|.
 
-LGrep {args}                                                    *direx-:LGrep*
+DirexLFind {pattern}                                                 *direx-:LFind*
+	Same as |:LFind|, except that the current buffer name is used as the
+	directory to search from.
+
+DirexGrep {args}                                                    *direx-:LGrep*
     Same as |:Grep|, except that the current buffer name is used as the
     directory to search from, and |location-list| is used instead of
     |quickfix|. Doesn't support |range|
+
+DirexLGrep {args}                                                    *direx-:LGrep*
+	Same as |:LGrep|, except that the current buffer name is used as the
+	directory to search from.
 
 The following commands are available in both Direx buffers and ~
 quickfix/location list buffers opened by |:Find| and |:LFind| ~

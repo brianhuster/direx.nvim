@@ -53,10 +53,19 @@ command('Find', function(cmd)
 	require 'direx'.find(cmd.args, {})
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open quickfix window' })
 
+command('LFind', function(cmd)
+	require 'direx'.find(cmd.args, { wintype = 'location' })
+end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
+
 command('Grep', function(cmd)
 	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
 	require 'direx'.grep(pattern, {})
 end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
+
+command('LGrep', function(cmd)
+	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
+	require 'direx'.grep(pattern, { wintype = 'location' })
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
 
 vim.keymap.set('n', '<Plug>(direx-up)', function()
 	local bufname = vim.api.nvim_buf_get_name(0)

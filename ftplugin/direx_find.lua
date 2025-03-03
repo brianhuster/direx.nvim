@@ -42,10 +42,28 @@ end, {
 	desc = 'Execute shell command with optional range and arguments'
 })
 
+bufcmd(0, 'DirexFind', function(cmd)
+	require 'direx'.find(cmd.args, { from_dir = api.nvim_buf_get_name(0) })
+end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
+
+bufcmd(0, 'DirexGrep', function(cmd)
+	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
+	require 'direx'.grep(pattern, { from_dir = api.nvim_buf_get_name(0) })
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
+
+bufcmd(0, 'DirexLFind', function(cmd)
+	require 'direx'.find(cmd.args, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
+end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
+
+bufcmd(0, 'DirexLGrep', function(cmd)
+	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
+	require 'direx'.grep(pattern, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
+end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
+
 vim.b.undo_ftplugin = table.concat({
 	vim.b.undo_ftplugin or '',
 	"setl conceallevel< concealcursor< wrap<",
 	"silent! nunmap <CR> K P !",
-	"silent! delcommand -buffer Shdo",
+	"silent! delcommand -buffer Shdo DirexFind DirexGrep DirexLFind DirexLGrep",
 	"silent! xunmap !"
 }, '\n')

@@ -52,15 +52,6 @@ bufcmd(buf, 'Trash', function(args)
 	dir.trash(lines, { confirm = args.bang == false })
 end, { range = true, bang = true, desc = 'Trash selected files and directories' })
 
-bufcmd(buf, 'LFind', function(cmd)
-	require 'direx'.find(cmd.args, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
-end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
-
-bufcmd(buf, 'LGrep', function(cmd)
-	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
-	require 'direx'.grep(pattern, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
-end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
-
 local augroup = vim.api.nvim_create_augroup('DirexBuf', { clear = true })
 vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 	buffer = buf,

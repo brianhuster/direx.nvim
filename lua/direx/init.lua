@@ -243,7 +243,7 @@ function M.find(pattern, opts)
 		end
 	})
 	vim.cmd(opts.wintype == 'location' and 'lopen' or 'copen')
-	vim.b.from_dir = dir
+	vim.b._direx = dir
 	vim.cmd.runtime 'syntax/direxfind.vim'
 	vim.cmd.runtime 'ftplugin/direx_find.lua'
 end
@@ -294,6 +294,7 @@ function M.grep(pattern, opts)
 		sync_with_qflist = false,
 	}
 	vim.cmd(opts.wintype == 'quickfix' and 'copen' or 'lopen')
+	vim.b._direx = cwd
 	local winheight = vim.api.nvim_win_get_height(0)
 
 	api.nvim_create_autocmd('CursorMoved', {
