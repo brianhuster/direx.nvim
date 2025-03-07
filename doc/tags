@@ -1,5 +1,6 @@
 :Direx	direx.txt	/*:Direx*
 :DirexFind	direx.txt	/*:DirexFind*
+:DirexFzf	direx.txt	/*:DirexFzf*
 :DirexGrep	direx.txt	/*:DirexGrep*
 :DirexLFind	direx.txt	/*:DirexLFind*
 :DirexLGrep	direx.txt	/*:DirexLGrep*
@@ -22,6 +23,7 @@ direx-configuration	direx.txt	/*direx-configuration*
 direx-configuration-mappings	direx.txt	/*direx-configuration-mappings*
 direx-current-directory	direx.txt	/*direx-current-directory*
 direx-faq	direx.txt	/*direx-faq*
+direx-fzfprg	direx.txt	/*direx-fzfprg*
 direx-g?	direx.txt	/*direx-g?*
 direx-grn	direx.txt	/*direx-grn*
 direx-mappings	direx.txt	/*direx-mappings*

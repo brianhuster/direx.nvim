@@ -215,7 +215,8 @@ function M.find(pattern, opts)
 		vim.notify('No files found', vim.log.levels.WARN)
 		return
 	end
-	local dir = opts.dir or vim.fn.getcwd()
+	local cwd = vim.fn.getcwd()
+	local dir = opts.dir or cwd
 	if dir:sub(-1) ~= '/' then
 		dir = dir .. '/'
 	end
@@ -237,6 +238,9 @@ function M.find(pattern, opts)
 			local l = {}
 			for idx = info.start_idx, info.end_idx do
 				local bufname = api.nvim_buf_get_name(items[idx].bufnr)
+				if vim.fn.isabsolutepath(bufname) == 1 then
+					bufname = vim.fs.relpath(cwd, bufname) or bufname
+				end
 				table.insert(l, require('direx.fs').isdirectory(bufname) and bufname .. '/' or bufname)
 			end
 			return l
@@ -267,6 +271,7 @@ function M.grep(pattern, opts)
 
 	local function setlist(list, action)
 		list = vim.tbl_filter(function(v) return v ~= '' end, list)
+		list = vim.tbl_map(function(v) return vim.fs.joinpath(cwd, v) end, list)
 		local dict = {
 			lines = list,
 			title = "Grep " .. pattern .. " from " .. cwd,
@@ -303,11 +308,6 @@ function M.grep(pattern, opts)
 			if lnum + winheight >= grep_qflist_lines_num then
 				if not temporary.sync_with_qflist then
 					local list = temporary.lines
-					for i, v in ipairs(list) do
-						if v ~= '' then
-							list[i] = vim.fs.joinpath(cwd, v)
-						end
-					end
 					setlist(list, 'a')
 					temporary.sync_with_qflist = true
 					temporary.text = ''
@@ -331,11 +331,6 @@ function M.grep(pattern, opts)
 			if grep_qflist_lines_num < 2 * winheight and not temporary.sync_with_qflist then
 				vim.schedule(function()
 					local list = temporary.lines
-					for i, v in ipairs(list) do
-						if v ~= '' then
-							list[i] = vim.fs.joinpath(cwd, v)
-						end
-					end
 					setlist(list, 'a')
 					temporary.sync_with_qflist = true
 					temporary.lines = {}
@@ -351,9 +346,10 @@ end
 ---@param opts { dir: string? }
 function M.fzf(cmd, opts)
 	local tempfile = vim.fn.tempname()
+	local prev_buf = vim.api.nvim_get_current_buf()
 	local buf = vim.api.nvim_create_buf(false, false)
 	vim.api.nvim_set_current_buf(buf)
-	vim.fn.jobstart('fzf ' .. cmd.args .. ' > ' .. tempfile, {
+	vim.fn.jobstart(require('direx.config').fzfprg .. ' ' .. cmd.args .. ' > ' .. tempfile, {
 		term = true,
 		cwd = opts.dir,
 		on_exit = function(_, code)
@@ -370,6 +366,7 @@ function M.fzf(cmd, opts)
 	vim.cmd.startinsert()
 	vim.keymap.set('t', '<Esc>', function()
 		vim.fn.jobstop(vim.bo.channel)
+		vim.api.nvim_set_current_buf(prev_buf)
 		vim.api.nvim_buf_delete(buf, { force = true })
 	end)
 end

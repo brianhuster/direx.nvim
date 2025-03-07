@@ -2,7 +2,6 @@ local api = vim.api
 local direx = setmetatable({}, { __index = function(_, k) return require('direx')[k] end })
 local bufmap = require('direx.utils').bufmap
 local bufcmd = api.nvim_buf_create_user_command
-local dir = vim.bo.ft == 'direx' and vim.api.nvim_buf_get_name(0) or vim.b._direx
 
 vim.wo[0][0].conceallevel = 3
 vim.wo[0][0].concealcursor = 'nvc'
