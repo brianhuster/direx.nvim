@@ -202,20 +202,20 @@ function M.paste()
 end
 
 ---@param pattern string
----@param opts { wintype: 'quickfix'|'location'?, from_dir: string? }
+---@param opts { wintype: 'quickfix'|'location'?, dir: string? }
 function M.find(pattern, opts)
 	local default_opts = {
 		wintype = 'quickfix',
-		from_dir = vim.fn.getcwd(),
+		dir = vim.fn.getcwd(),
 	}
 	opts = vim.tbl_deep_extend('force', default_opts, opts)
-	local files = vim.fn.glob(vim.fs.joinpath(opts.from_dir, '**/') .. pattern,
+	local files = vim.fn.glob(vim.fs.joinpath(opts.dir, '**/') .. pattern,
 		false, true)
 	if #files == 0 then
 		vim.notify('No files found', vim.log.levels.WARN)
 		return
 	end
-	local dir = opts.from_dir or vim.fn.getcwd()
+	local dir = opts.dir or vim.fn.getcwd()
 	if dir:sub(-1) ~= '/' then
 		dir = dir .. '/'
 	end
@@ -249,13 +249,12 @@ function M.find(pattern, opts)
 end
 
 ---@param pattern string
----@param opts { wintype: 'quickfix'|'location'?, from_dir: string? }
+---@param opts { wintype: 'quickfix'|'location'?, dir: string? }
 function M.grep(pattern, opts)
 	M.killGrepProcess()
 	local grepprg, grepfm, shell, shellcmdflag = vim.o.grepprg, vim.o.grepformat, vim.o.shell, vim.o.shellcmdflag
 	local win = vim.api.nvim_get_current_win()
-	local cwd = opts.from_dir or vim.fn.getcwd()
-	cwd = vim.fs.relpath(vim.fn.getcwd(), cwd) or cwd ---@diagnostic disable-line: cast-local-type
+	local cwd = opts.dir or vim.fn.getcwd()
 	local default_opts = {
 		wintype = 'quickfix',
 	}
@@ -345,6 +344,33 @@ function M.grep(pattern, opts)
 		end
 	}, function(data)
 		print(data.stderr or '')
+	end)
+end
+
+---@param cmd table Similar to the result of nvim_parse_cmd()
+---@param opts { dir: string? }
+function M.fzf(cmd, opts)
+	local tempfile = vim.fn.tempname()
+	local buf = vim.api.nvim_create_buf(false, false)
+	vim.api.nvim_set_current_buf(buf)
+	vim.fn.jobstart('fzf ' .. cmd.args .. ' > ' .. tempfile, {
+		term = true,
+		cwd = opts.dir,
+		on_exit = function(_, code)
+			if code == 0 then
+				local fname = vim.fn.readfile(tempfile)[1]
+				if vim.fn.isabsolutepath(fname) == 0 then
+					fname = vim.fs.joinpath(opts.dir or '', fname)
+				end
+				vim.cmd.edit(fname)
+				vim.api.nvim_buf_delete(buf, { force = true })
+			end
+		end
+	})
+	vim.cmd.startinsert()
+	vim.keymap.set('t', '<Esc>', function()
+		vim.fn.jobstop(vim.bo.channel)
+		vim.api.nvim_buf_delete(buf, { force = true })
 	end)
 end
 

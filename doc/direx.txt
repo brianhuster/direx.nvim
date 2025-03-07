@@ -56,6 +56,12 @@ The following options are available:
         end
 	}
 <
+
+`opts.fzfprg` (string) ~								*direx-fzfprg*
+	The external program used for |:DirexFzf|. Default: `"fzf"`
+
+	The program must send the chosen file name to `stdout` when it exits.
+
 												*direx-configuration-mappings*
 Key mappings can be configured by mapping the corresponding
 `<Plug>(direx-<name>)` key to a custom key sequence (see |direx-mappings|).
@@ -77,17 +83,18 @@ Direx {dir}                                                *:Direx*
 	If {dir} is not provided, then reload the buffer if it is a Direx buffer,
 	or open the parent directory of the current buffer otherwise.
 
-Find {pattern}                                          *:Find* *direx-:Find*
-    Find files/directories matching {pattern} from the |current-directory|.
-    Show results in a |quickfix| list.
+DirexFind {pattern}                                          *:DirexFind*
+	Find files/directories matching {pattern} from the
+	|direx-current-directory|. Show results in a |quickfix| list.
 
-LFind {pattern}                                        *:LFind* *direx-:LFind*
-	Same as |:Find|, but open the results in |location-list|.
+DirexLFind {pattern}                                        *:DirexLFind*
+	Same as |:DirexFind|, but open the results in |location-list|.
 
-[range]Grep {args}                                      *:Grep* *direx-:Grep*
+[range]DirexGrep {args}                                      *:DirexGrep*
 
     Use external grep tool set by |'grepprg'| and |'grepformat'| to search for
-    {args} from the |current-directory|. Show results in a |quickfix| list.
+    {args} from the |direx-current-directory|. Show results in a |quickfix|
+	list.
 
 	Note: Unlike core |:grep| command, Direx's |:Grep| is asynchronous, and
 	will raise an error if |'grepprg'| is empty or set to `"internal"`
@@ -103,8 +110,22 @@ LFind {pattern}                                        *:LFind* *direx-:LFind*
     `-j1` or limit `--max-columns` to a positive number to avoid memory issues.
     See https://github.com/BurntSushi/ripgrep/issues/2505 and `:Man rg`
 
-[range]LGrep {args}                                    *:LGrep* *direx-:LGrep*
-	Same as |:Grep|, but open the results in |location-list|.
+[range]DirexLGrep {args}                                    *:DirexLGrep*
+	Same as |:DirexGrep|, but open the results in |location-list|.
+
+															*:DirexFzf*
+DirexFzf {args}
+	Open a fuzzy finder program (see |direx-fzfprg|) in a |terminal| buffer
+	and edit the selected file/directory. {args} are passed to the program if
+	provided. `cwd` of the terminal job is set to |direx-current-directory|.
+
+													*direx-current-directory*
+|direx-current-directory| is defined as follows:
+	- If the current buffer is a Direx buffer, then it is the buffer name
+	- If the current buffer is a quickfix/location list opened by
+	|:DirexFind|, |:DirexLFind|, |:DirexGrep|, or |:DirexLGrep| from a Direx
+	buffer, then it is the name of that Direx buffer.
+	- Otherwise, it is the |current-directory|
 
 BUFFER LOCAL ~
 
@@ -148,24 +169,6 @@ Paste                                                           *direx-:Paste*
 
     A confirmation prompt will be shown before the operation is executed. Add
     bang to execute without confirmation.
-
-DirexFind {pattern}                                                 *direx-:LFind*
-    Same as |:Find|, except that the current buffer name is used as the
-    directory to search from, and |location-list| is used instead of
-    |quickfix|.
-
-DirexLFind {pattern}                                                 *direx-:LFind*
-	Same as |:LFind|, except that the current buffer name is used as the
-	directory to search from.
-
-DirexGrep {args}                                                    *direx-:LGrep*
-    Same as |:Grep|, except that the current buffer name is used as the
-    directory to search from, and |location-list| is used instead of
-    |quickfix|. Doesn't support |range|
-
-DirexLGrep {args}                                                    *direx-:LGrep*
-	Same as |:LGrep|, except that the current buffer name is used as the
-	directory to search from.
 
 The following commands are available in both Direx buffers and ~
 quickfix/location list buffers opened by |:Find| and |:LFind| ~

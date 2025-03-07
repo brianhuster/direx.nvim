@@ -35,6 +35,17 @@ au({ 'ShellCmdPost' }, {
 
 local command = api.nvim_create_user_command
 
+---@return string
+local function get_dir()
+	if vim.bo.ft == 'direx' then
+		return vim.api.nvim_buf_get_name(0)
+	elseif vim.bo.ft == 'qf' and vim.b._direx then
+		return vim.b._direx
+	else
+		return vim.fn.getcwd()
+	end
+end
+
 command('Direx', function(cmd)
 	vim.w._direx_prev_bufname = vim.fn.expand '%'
 	local dir = cmd.args
@@ -49,23 +60,27 @@ command('Direx', function(cmd)
 	require 'direx'.open(nil, dir)
 end, { nargs = '*' })
 
-command('Find', function(cmd)
-	require 'direx'.find(cmd.args, {})
+command('DirexFind', function(cmd)
+	require 'direx'.find(cmd.args, { dir = get_dir() })
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open quickfix window' })
 
-command('LFind', function(cmd)
-	require 'direx'.find(cmd.args, { wintype = 'location' })
+command('DirexLFind', function(cmd)
+	require 'direx'.find(cmd.args, { wintype = 'location', dir = get_dir() })
 end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
 
-command('Grep', function(cmd)
+command('DirexGrep', function(cmd)
 	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
-	require 'direx'.grep(pattern, {})
+	require 'direx'.grep(pattern, { dir = get_dir() })
 end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
 
-command('LGrep', function(cmd)
+command('DirexLGrep', function(cmd)
 	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
-	require 'direx'.grep(pattern, { wintype = 'location' })
+	require 'direx'.grep(pattern, { wintype = 'location', dir = get_dir() })
 end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
+
+command('DirexFzf', function(cmd)
+	require 'direx'.fzf(cmd, { dir = get_dir() })
+end, { nargs = '*', desc = 'Fuzzy find files/folders in directory and its subdirectories' })
 
 vim.keymap.set('n', '<Plug>(direx-up)', function()
 	local bufname = vim.api.nvim_buf_get_name(0)

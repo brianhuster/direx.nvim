@@ -5,9 +5,11 @@ local M = {}
 ---@field default? boolean
 ---@field grep? { parse_args: 'shell'|false, timeout: number? }
 ---@field set nil
+---@field fzfprg? string
 
 M.grep = { parse_args = 'shell' }
 M.default = true
+M.fzfprg = 'fzf'
 
 ---@param opts DirConfigOpts
 M.set = function(opts)

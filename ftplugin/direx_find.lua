@@ -1,7 +1,8 @@
 local api = vim.api
-local dir = setmetatable({}, { __index = function(_, k) return require('direx')[k] end })
+local direx = setmetatable({}, { __index = function(_, k) return require('direx')[k] end })
 local bufmap = require('direx.utils').bufmap
 local bufcmd = api.nvim_buf_create_user_command
+local dir = vim.bo.ft == 'direx' and vim.api.nvim_buf_get_name(0) or vim.b._direx
 
 vim.wo[0][0].conceallevel = 3
 vim.wo[0][0].concealcursor = 'nvc'
@@ -17,8 +18,8 @@ local function get_lines_from_cmd_range(args)
 	return args.range > 0 and api.nvim_buf_get_lines(0, args.line1 - 1, args.line2, false) or nil
 end
 
-bufmap('n', 'K', function() dir.hover() end, { desc = 'View file or folder info' })
-bufmap('n', '<Plug>(direx-preview)', function() dir.preview(api.nvim_get_current_line()) end,
+bufmap('n', 'K', function() direx.hover() end, { desc = 'View file or folder info' })
+bufmap('n', '<Plug>(direx-preview)', function() direx.preview(api.nvim_get_current_line()) end,
 	{ desc = 'Preview file or directory' })
 if vim.fn.hasmapto('<Plug>(direx-preview)', 'n') == 0 then
 	bufmap('n', 'P', '<Plug>(direx-preview)', { desc = 'Preview file or directory' })
@@ -42,28 +43,10 @@ end, {
 	desc = 'Execute shell command with optional range and arguments'
 })
 
-bufcmd(0, 'DirexFind', function(cmd)
-	require 'direx'.find(cmd.args, { from_dir = api.nvim_buf_get_name(0) })
-end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
-
-bufcmd(0, 'DirexGrep', function(cmd)
-	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
-	require 'direx'.grep(pattern, { from_dir = api.nvim_buf_get_name(0) })
-end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
-
-bufcmd(0, 'DirexLFind', function(cmd)
-	require 'direx'.find(cmd.args, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
-end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
-
-bufcmd(0, 'DirexLGrep', function(cmd)
-	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
-	require 'direx'.grep(pattern, { wintype = 'location', from_dir = api.nvim_buf_get_name(0) })
-end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
-
 vim.b.undo_ftplugin = table.concat({
 	vim.b.undo_ftplugin or '',
 	"setl conceallevel< concealcursor< wrap<",
 	"silent! nunmap <CR> K P !",
-	"silent! delcommand -buffer Shdo DirexFind DirexGrep DirexLFind DirexLGrep",
+	"silent! delcommand -buffer Shdo",
 	"silent! xunmap !"
 }, '\n')

@@ -13,8 +13,6 @@ local function get_lines_from_cmd_range(args)
 	return args.range > 0 and api.nvim_buf_get_lines(0, args.line1 - 1, args.line2, false) or nil
 end
 
-require('direx.utils').add_icons()
-
 vim.cmd.sort [[/^.*[/]/]]
 vim.fn.search([[\V\C]] .. vim.fn.escape(vim.w._direx_prev_bufname, '\\'), 'cw')
 
@@ -64,6 +62,6 @@ vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
 vim.b.undo_ftplugin = table.concat({
 	"setl bufhidden< buftype< swapfile<",
 	"silent! nunmap <CR> grn g?",
-	"silent! delcommand -buffer Cut Copy Paste Trash Remove LFind LGrep",
+	"silent! delcommand -buffer Cut Copy Paste Trash Remove",
 	"augroup DirexBuf | au! | augroup END",
 }, "\n")
