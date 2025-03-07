@@ -1,6 +1,8 @@
 :Direx	direx.txt	/*:Direx*
 :Find	direx.txt	/*:Find*
 :Grep	direx.txt	/*:Grep*
+:LFind	direx.txt	/*:LFind*
+:LGrep	direx.txt	/*:LGrep*
 <Plug>(direx-preview)	direx.txt	/*<Plug>(direx-preview)*
 <Plug>(direx-up)	direx.txt	/*<Plug>(direx-up)*
 direx	direx.txt	/*direx*
@@ -10,6 +12,10 @@ direx-:Cut	direx.txt	/*direx-:Cut*
 direx-:Find	direx.txt	/*direx-:Find*
 direx-:Grep	direx.txt	/*direx-:Grep*
 direx-:LFind	direx.txt	/*direx-:LFind*
+direx-:LFind	direx.txt	/*direx-:LFind*
+direx-:LFind	direx.txt	/*direx-:LFind*
+direx-:LGrep	direx.txt	/*direx-:LGrep*
+direx-:LGrep	direx.txt	/*direx-:LGrep*
 direx-:LGrep	direx.txt	/*direx-:LGrep*
 direx-:Paste	direx.txt	/*direx-:Paste*
 direx-:Remove	direx.txt	/*direx-:Remove*

@@ -82,7 +82,7 @@ au('BufWritePre', {
 	callback = function(args)
 		local lsp = require 'direx.lsp'
 		if vim.fn.filereadable(args.file) == 0 then
-			lsp.workspace.willCreateFiles({ args.match })
+			lsp.workspace.willCreateFiles {{ args.match }}
 			new_created_files[args.match] = true
 		else
 			lsp.request('textDocument/willSave', {
@@ -97,7 +97,7 @@ au('BufWritePost', {
 	group = 'FileExplorer',
 	callback = function(args)
 		if new_created_files[args.match] then
-			require 'direx.lsp'.workspace.didCreateFiles({ args.match })
+			require 'direx.lsp'.workspace.didCreateFiles {{ args.match }}
 		end
 		new_created_files[args.match] = false
 	end
