@@ -23,7 +23,7 @@ if require('direx.config').default then
 	})
 end
 
-au({ 'BufFilePost', 'ShellCmdPost' }, {
+au({ 'ShellCmdPost' }, {
 	group = 'FileExplorer',
 	nested = true,
 	callback = function(_)
@@ -36,7 +36,7 @@ au({ 'BufFilePost', 'ShellCmdPost' }, {
 local command = api.nvim_create_user_command
 
 command('Direx', function(cmd)
-	vim.w.prev_bufname = api.nvim_buf_get_name(0)
+	vim.w._direx_prev_bufname = vim.fn.expand '%'
 	local dir = cmd.args
 	if dir == '' then
 		if vim.bo.ft == 'direx' then

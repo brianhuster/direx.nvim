@@ -16,7 +16,7 @@ end
 require('direx.utils').add_icons()
 
 vim.cmd.sort [[/^.*[/]/]]
-vim.fn.search([[\V\C]] .. vim.fn.escape(vim.w.prev_bufname, '\\'), 'cw')
+vim.fn.search([[\V\C]] .. vim.fn.escape(vim.w._direx_prev_bufname, '\\'), 'cw')
 
 bufmap('n', '<CR>', function() vim.cmd.edit(api.nvim_get_current_line()) end,
 	{ desc = 'Open file or directory under cursor' })
