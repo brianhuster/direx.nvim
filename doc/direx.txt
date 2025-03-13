@@ -84,16 +84,21 @@ Direx {dir}                                                *:Direx*
 	or open the parent directory of the current buffer otherwise.
 
 DirexFind {pattern}                                          *:DirexFind*
-	Find files/directories matching {pattern} from the
-	|direx-current-directory|. Show results in a |quickfix| list.
+	Find files/directories matching {pattern} from the |current-directory|.
+	Show results in a |quickfix| list.
+
+DirexFind! {pattern}                                        *:DirexFind!*
+	Same as |:DirexFind|, but search from |direx-directory|
 
 DirexLFind {pattern}                                        *:DirexLFind*
-	Same as |:DirexFind|, but open the results in |location-list|.
+DirexLFind! {pattern}                                        *:DirexLFind!*
+	Same as |:DirexFind| and |DirexFind!| respectively, but open the results
+	in |location-list|.
 
 [range]DirexGrep {args}                                      *:DirexGrep*
 
     Use external grep tool set by |'grepprg'| and |'grepformat'| to search for
-    {args} from the |direx-current-directory|. Show results in a |quickfix|
+    {args} from the |current-directory|. Show results in a |quickfix|
 	list.
 
 	Note: Unlike core |:grep| command, Direx's |:Grep| is asynchronous, and
@@ -110,8 +115,13 @@ DirexLFind {pattern}                                        *:DirexLFind*
     `-j1` or limit `--max-columns` to a positive number to avoid memory issues.
     See https://github.com/BurntSushi/ripgrep/issues/2505 and `:Man rg`
 
+DirexGrep! {args}                                      *:DirexGrep!*
+	Same as |:DirexGrep|, but search from |direx-directory|
+
 [range]DirexLGrep {args}                                    *:DirexLGrep*
-	Same as |:DirexGrep|, but open the results in |location-list|.
+[range]DirexLGrep! {args}                                    *:DirexLGrep!*
+	Same as |:DirexGrep| and |:DirexGrep!| respectively, but open the results
+	in |location-list|.
 
 															*:DirexFzf*
 DirexFzf {args}
@@ -119,8 +129,11 @@ DirexFzf {args}
 	and edit the selected file/directory. {args} are passed to the program if
 	provided. `cwd` of the terminal job is set to |direx-current-directory|.
 
-													*direx-current-directory*
-|direx-current-directory| is defined as follows:
+DirexFzf! {args}												*:DirexFzf!*
+	Same as |:DirexFzf|, but search from |direx-directory|
+
+													*direx-directory*
+|direx-directory| is defined as follows:
 	- If the current buffer is a Direx buffer, then it is the buffer name
 	- If the current buffer is a quickfix/location list opened by
 	|:DirexFind|, |:DirexLFind|, |:DirexGrep|, or |:DirexLGrep| from a Direx

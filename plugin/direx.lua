@@ -61,26 +61,27 @@ command('Direx', function(cmd)
 end, { nargs = '*' })
 
 command('DirexFind', function(cmd)
-	require 'direx'.find(cmd.args, { dir = get_dir() })
-end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open quickfix window' })
+	require 'direx'.find(cmd.args, { dir = cmd.bang and get_dir() or nil })
+end, { nargs = '+', bang = true,
+	desc = 'Find files/folders <arg> in directory and its subdirectories, then open quickfix window' })
 
 command('DirexLFind', function(cmd)
-	require 'direx'.find(cmd.args, { wintype = 'location', dir = get_dir() })
-end, { nargs = '+', desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
+	require 'direx'.find(cmd.args, { wintype = 'location', dir = cmd.bang and get_dir() or nil })
+end, { nargs = '+', bang = true, desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
 
 command('DirexGrep', function(cmd)
 	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
-	require 'direx'.grep(pattern, { dir = get_dir() })
-end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
+	require 'direx'.grep(pattern, { dir = cmd.bang and get_dir() or nil })
+end, { nargs = '+', bang = true, desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
 
 command('DirexLGrep', function(cmd)
 	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
-	require 'direx'.grep(pattern, { wintype = 'location', dir = get_dir() })
-end, { nargs = '+', desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
+	require 'direx'.grep(pattern, { wintype = 'location', dir = cmd.bang and get_dir() or nil })
+end, { nargs = '+', bang = true, desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
 
 command('DirexFzf', function(cmd)
-	require 'direx'.fzf(cmd, { dir = get_dir() })
-end, { nargs = '*', desc = 'Fuzzy find files/folders in directory and its subdirectories' })
+	require 'direx'.fzf(cmd, { dir = cmd.bang and get_dir() or nil })
+end, { nargs = '*', bang = true, desc = 'Fuzzy finder' })
 
 vim.keymap.set('n', '<Plug>(direx-up)', function()
 	local bufname = vim.api.nvim_buf_get_name(0)
