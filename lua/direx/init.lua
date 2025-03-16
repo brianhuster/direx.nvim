@@ -285,9 +285,7 @@ function M.grep(pattern, opts)
 	setlist({}, 'r')
 
 	local grepcmd = vim.tbl_map(function(v)
-		return (v == '' or v == '$*') and pattern
-			or ((v:sub(1, 1) == '%' or v:sub(1, 1) == '#' or v:sub(1, 1) == '<') and vim.fn.expand(v))
-			or v
+		return (v == '' or v == '$*') and pattern or vim.fn.expandcmd(v, { errmsg = false })
 	end, vim.split(grepprg, ' '))
 	if require('direx.config').grep.parse_args == 'shell' then
 		grepcmd = { shell, shellcmdflag, table.concat(grepcmd, ' ') }
