@@ -1,9 +1,14 @@
 :Direx	direx.txt	/*:Direx*
 :DirexFind	direx.txt	/*:DirexFind*
+:DirexFind!	direx.txt	/*:DirexFind!*
 :DirexFzf	direx.txt	/*:DirexFzf*
+:DirexFzf!	direx.txt	/*:DirexFzf!*
 :DirexGrep	direx.txt	/*:DirexGrep*
+:DirexGrep!	direx.txt	/*:DirexGrep!*
 :DirexLFind	direx.txt	/*:DirexLFind*
+:DirexLFind!	direx.txt	/*:DirexLFind!*
 :DirexLGrep	direx.txt	/*:DirexLGrep*
+:DirexLGrep!	direx.txt	/*:DirexLGrep!*
 <Plug>(direx-preview)	direx.txt	/*<Plug>(direx-preview)*
 <Plug>(direx-up)	direx.txt	/*<Plug>(direx-up)*
 direx	direx.txt	/*direx*
@@ -21,7 +26,7 @@ direx-P	direx.txt	/*direx-P*
 direx-commands	direx.txt	/*direx-commands*
 direx-configuration	direx.txt	/*direx-configuration*
 direx-configuration-mappings	direx.txt	/*direx-configuration-mappings*
-direx-current-directory	direx.txt	/*direx-current-directory*
+direx-directory	direx.txt	/*direx-directory*
 direx-faq	direx.txt	/*direx-faq*
 direx-fzfprg	direx.txt	/*direx-fzfprg*
 direx-g?	direx.txt	/*direx-g?*

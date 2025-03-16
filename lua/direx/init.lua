@@ -356,7 +356,7 @@ function M.fzf(cmd, opts)
 			if code == 0 then
 				local fname = vim.fn.readfile(tempfile)[1]
 				if vim.fn.isabsolutepath(fname) == 0 then
-					fname = vim.fs.joinpath(opts.dir or '', fname)
+					fname = vim.fs.joinpath(opts.dir or vim.fn.getcwd(), fname)
 				end
 				vim.cmd.edit(fname)
 				vim.api.nvim_buf_delete(buf, { force = true })
