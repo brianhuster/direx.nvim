@@ -58,9 +58,11 @@ The following options are available:
 <
 
 `opts.fzfprg` (string) ~								*direx-fzfprg*
-	The external program used for |:DirexFzf|. Default: `"fzf"`
+	The external program used for |:DirexFzf|. Default: `"fzf "`
 
 	The program must send the chosen file name to `stdout` when it exits.
+
+	See 'grepprg' for how this option should look like.
 
 												*direx-configuration-mappings*
 Key mappings can be configured by mapping the corresponding

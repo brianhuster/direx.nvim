@@ -47,4 +47,13 @@ function M.feedkeys(key)
 	api.nvim_feedkeys(vim.keycode(key), 'n', true)
 end
 
+---@param prg string
+---@param arg string
+---@return string[]
+function M.parse_prg(prg, arg)
+	return vim.tbl_map(function(v)
+		return (v == '' or v == '$*') and arg or vim.fn.expandcmd(v, { errmsg = false })
+	end, vim.split(prg, ' '))
+end
+
 return M

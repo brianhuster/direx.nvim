@@ -4,6 +4,9 @@ local ws = require 'direx.lsp'.workspace
 ---@module 'direx.fs'
 local dirfs = setmetatable({}, { __index = function(_, k) return require('direx.fs')[k] end })
 
+---@module 'direx.utils'
+local utils = setmetatable({}, { __index = function(_, k) return require('direx.utils')[k] end })
+
 ---@type { type: 'copy'|'move', paths: string[] }
 M.pending_operations = {}
 
@@ -284,9 +287,7 @@ function M.grep(pattern, opts)
 
 	setlist({}, 'r')
 
-	local grepcmd = vim.tbl_map(function(v)
-		return (v == '' or v == '$*') and pattern or vim.fn.expandcmd(v, { errmsg = false })
-	end, vim.split(grepprg, ' '))
+	local grepcmd = utils.parse_prg(grepprg, pattern)
 	if require('direx.config').grep.parse_args == 'shell' then
 		grepcmd = { shell, shellcmdflag, table.concat(grepcmd, ' ') }
 	end
@@ -347,7 +348,8 @@ function M.fzf(cmd, opts)
 	local prev_buf = vim.api.nvim_get_current_buf()
 	local buf = vim.api.nvim_create_buf(false, false)
 	vim.api.nvim_set_current_buf(buf)
-	vim.fn.jobstart(require('direx.config').fzfprg .. ' ' .. cmd.args .. ' > ' .. tempfile, {
+	local fzfcmd = table.concat(utils.parse_prg(require('direx.config').fzfprg, cmd.args), ' ')
+	vim.fn.jobstart(fzfcmd .. ' > ' .. tempfile, {
 		term = true,
 		cwd = opts.dir,
 		on_exit = function(_, code)
