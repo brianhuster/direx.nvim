@@ -15,7 +15,7 @@ Concept ~
 Similar to |vim-dirvish|, a Direx buffer only contains a list of paths, and a
 Direx buffer name is a literal directory path. Which means you can change
 current working directory to the directory opened in a Direx buffer with >vim
-	:cd %
+    :cd %
 
 It's totally fine to slice, dice, and smash any Direx buffer: it will not
 modify the filesystem. To actually modify the filesystem, you need to use one
@@ -30,23 +30,23 @@ opts being a table.
 The following options are available:
 
 `opts.default` (boolean) ~
-	Use Direx as the default plugin for opening directories. Default: `true`
+    Use Direx as the default plugin for opening directories. Default: `true`
 
 `opts.grep` (table) ~
     A table with the following fields:
     • `parse_args` (`"shell"|false`) ~
         Default: `"shell"`
-	   	See |:Grep| for information about `parse_args` field.
-	• `timeout` (number?) ~
-		Default: `nil`
-		Timeout for the process in milliseconds.
+        See |:Grep| for information about `parse_args` field.
+    • `timeout` (number?) ~
+        Default: `nil`
+        Timeout for the process in milliseconds.
 
 `opts.iconfunc` (fun(path: string): {icon: string, hl: string}) ~
     Function to add icons to direx buffer. Accepts path of file/directory as
     argument and returns a table with `icon` and `hl` keys. Default: `nil`
 
     For example >lua
-	{
+    {
         iconfunc = function(path)
             if path:sub(-1) == '/' then
                 return { icon = ' ', hl = 'Directory' }
@@ -54,24 +54,24 @@ The following options are available:
                 return { icon = '󰈔 ', hl = 'Normal' }
             end
         end
-	}
+    }
 <
 
-`opts.fzfprg` (string) ~								*direx-fzfprg*
-	The external program used for |:DirexFzf|. Default: `"fzf "`
+`opts.fzfprg` (string) ~                                *direx-fzfprg*
+    The external program used for |:DirexFzf|. Default: `"fzf "`
 
-	The program must send the chosen file name to `stdout` when it exits.
+    The program must send the chosen file name to `stdout` when it exits.
 
-	See 'grepprg' for how this option should look like.
+    See 'grepprg' for how this option should look like.
 
-												*direx-configuration-mappings*
+                                                *direx-configuration-mappings*
 Key mappings can be configured by mapping the corresponding
 `<Plug>(direx-<name>)` key to a custom key sequence (see |direx-mappings|).
 For example, to use `<BS>` to go up a directory instead of the default
 `<minus>`, add the following to your `init.lua`: >lua
-	vim.keymap.set('n', '<BS>', '<Plug>(direx-up)', { desc = 'Open parent directory' })
+    vim.keymap.set('n', '<BS>', '<Plug>(direx-up)', { desc = 'Open parent directory' })
 <
-	(Or in `init.vim`, add `nmap <BS> <Plug>(direx-up)`)
+    (Or in `init.vim`, add `nmap <BS> <Plug>(direx-up)`)
 
 ==============================================================================
 COMMANDS                                                    *direx-commands*
@@ -80,31 +80,32 @@ GLOBAL ~
 
 Direx {dir}                                                *:Direx*
 
-	Open a Direx buffer in {dir}.
+    Open a Direx buffer in {dir}.
 
-	If {dir} is not provided, then reload the buffer if it is a Direx buffer,
-	or open the parent directory of the current buffer otherwise.
+    If {dir} is not provided, then reload the buffer if it is a Direx buffer,
+    or open the parent directory of the current buffer otherwise.
 
 DirexFind {pattern}                                          *:DirexFind*
-	Find files/directories matching {pattern} from the |current-directory|.
-	Show results in a |quickfix| list.
+    Find files/directories matching {pattern} from the |current-directory|.
+    Show results in a |quickfix| list.
 
 DirexFind! {pattern}                                        *:DirexFind!*
-	Same as |:DirexFind|, but search from |direx-directory|
+    Same as |:DirexFind|, but search from |direx-directory|
 
 DirexLFind {pattern}                                        *:DirexLFind*
 DirexLFind! {pattern}                                        *:DirexLFind!*
-	Same as |:DirexFind| and |DirexFind!| respectively, but open the results
-	in |location-list|.
+
+    Same as |:DirexFind| and |DirexFind!| respectively, but open the results
+    in |location-list|.
 
 [range]DirexGrep {args}                                      *:DirexGrep*
 
     Use external grep tool set by |'grepprg'| and |'grepformat'| to search for
     {args} from the |current-directory|. Show results in a |quickfix|
-	list.
+    list.
 
-	Note: Unlike core |:grep| command, Direx's |:Grep| is asynchronous, and
-	will raise an error if |'grepprg'| is empty or set to `"internal"`
+    Note: Unlike core |:grep| command, Direx's |:Grep| is asynchronous, and
+    will raise an error if |'grepprg'| is empty or set to `"internal"`
 
     If `opts.grep.parse_args` is `"shell"`, then the {args} are parsed by your
     |'shell'|. Pattern come from `range` are handled by `shellescape()` before
@@ -118,29 +119,29 @@ DirexLFind! {pattern}                                        *:DirexLFind!*
     See https://github.com/BurntSushi/ripgrep/issues/2505 and `:Man rg`
 
 DirexGrep! {args}                                      *:DirexGrep!*
-	Same as |:DirexGrep|, but search from |direx-directory|
+    Same as |:DirexGrep|, but search from |direx-directory|
 
 [range]DirexLGrep {args}                                    *:DirexLGrep*
 [range]DirexLGrep! {args}                                    *:DirexLGrep!*
-	Same as |:DirexGrep| and |:DirexGrep!| respectively, but open the results
-	in |location-list|.
 
-															*:DirexFzf*
-DirexFzf {args}
-	Open a fuzzy finder program (see |direx-fzfprg|) in a |terminal| buffer
-	and edit the selected file/directory. {args} are passed to the program if
-	provided. `cwd` of the terminal job is set to |direx-current-directory|.
+    Same as |:DirexGrep| and |:DirexGrep!| respectively, but open the results
+    in |location-list|.
 
-DirexFzf! {args}												*:DirexFzf!*
-	Same as |:DirexFzf|, but search from |direx-directory|
+DirexFzf {args}                                              *:DirexFzf*
+    Open a fuzzy finder program (see |direx-fzfprg|) in a |terminal| buffer
+    and edit the selected file/directory. {args} are passed to the program if
+    provided. `cwd` of the terminal job is set to |direx-current-directory|.
 
-													*direx-directory*
+DirexFzf! {args}                                                *:DirexFzf!*
+    Same as |:DirexFzf|, but search from |direx-directory|
+
+                                                    *direx-directory*
 |direx-directory| is defined as follows:
-	- If the current buffer is a Direx buffer, then it is the buffer name
-	- If the current buffer is a quickfix/location list opened by
-	|:DirexFind|, |:DirexLFind|, |:DirexGrep|, or |:DirexLGrep| from a Direx
-	buffer, then it is the name of that Direx buffer.
-	- Otherwise, it is the |current-directory|
+    - If the current buffer is a Direx buffer, then it is the buffer name
+    - If the current buffer is a quickfix/location list opened by
+    |:DirexFind|, |:DirexLFind|, |:DirexGrep|, or |:DirexLGrep| from a Direx
+    buffer, then it is the name of that Direx buffer.
+    - Otherwise, it is the |current-directory|
 
 BUFFER LOCAL ~
 
@@ -165,8 +166,8 @@ Paste                                                           *direx-:Paste*
     cli if available, otherwise fallback to built-in implementation based on
     FreeDesktop Trash Spec (https://www.freedesktop.org/wiki/Specifications/trash-spec)
 
-	Note: The built-in implementation only works in Desktop Environments that
-	support FreeDesktop Trash Spec, such as GNOME, KDE, Xfce
+    Note: The built-in implementation only works in Desktop Environments that
+    support FreeDesktop Trash Spec, such as GNOME, KDE, Xfce
 
     Also trigger `workspace/willDeleteFiles` and `workspace/didDeleteFiles`
     LSP method.
@@ -203,35 +204,35 @@ quickfix/location list buffers opened by |:Find| and |:LFind| ~
 MAPPINGS                                                    *direx-mappings*
 
 Global ~
-	<Plug>(direx-up)							*direx-minus* *<Plug>(direx-up)*
-	-			                Open Direx in the parent directory
+    <Plug>(direx-up)                            *direx-minus* *<Plug>(direx-up)*
+    -                           Open Direx in the parent directory
 
 Buffer local ~
 
 These mappings are only available in buffer with filetype `direx`.
-															*direx-g?*
+                                                            *direx-g?*
     g?                          Show help for mappings
 
-												*direx-<cr>* *direx-<Enter>*
+                                                *direx-<cr>* *direx-<Enter>*
     <CR>                        Open the file/directory in the current line
 
-															*direx-grn*
+                                                            *direx-grn*
     grn                         Rename the file/directory in the current line.
                                 Also trigger `workspace/willRenameFiles` and
                                 `workspace/didRenameFiles` LSP method
 
 These mappings are available in both `direx` buffer and quickfix/location list
 buffer opened by |:Find| and |:LFind|
-															*direx-K*
+                                                            *direx-K*
     K                           View file/directory hover information
 
-	P											*direx-P* *<Plug>(direx-preview)*
-    <Plug>(direx-preview)		Preview the file/directory in the current line
+    P                                           *direx-P* *<Plug>(direx-preview)*
+    <Plug>(direx-preview)       Preview the file/directory in the current line
 
-															*direx-!*
+                                                            *direx-!*
     !                           Inserts ":! {path}" into the command-line.
 
-															*direx-v_!*
+                                                            *direx-v_!*
     {Visual}!                   Inserts ":Shdo  {}" into the command-line.
 
 ==============================================================================
@@ -243,12 +244,12 @@ Direx doesn't provide any commands for creating file or directory, but, you
 can use |:e| and |:w| to create a file. For example, if you are in a Direx
 buffer named `~/.config/nvim/`, you can create file
 `~/.config/nvim/ftplugin/direx.lua` like this: >vim
-	:e %ftplugin/direx.lua
-	:w ++p
+    :e %ftplugin/direx.lua
+    :w ++p
 <
 Similarly, you can create a directory, for example `~/.config/nvim/lua` using
 shell command like `mkdir`: >vim
-	:!mkdir %lua
+    :!mkdir %lua
 <
 See also |cmdline-special|, |expand()|, |filename-modifiers|.
 
@@ -270,12 +271,12 @@ How to open Direx in a split? ~
 
 Combine with |:split| or |:vsplit|
 For example: >vim
-	:split | Direx
-	:vsplit | Direx
+    :split | Direx
+    :vsplit | Direx
 <
 You can also create commands >vim
-	command! -nargs=* DirexSplit :split | Direx <args>
-	command! -nargs=* DirexVSplit :vsplit | Direx <args>
+    command! -nargs=* DirexSplit :split | Direx <args>
+    command! -nargs=* DirexVSplit :vsplit | Direx <args>
 <
 ==============================================================================
  vim:tw=78:ts=4:sw=4:et:ft=help:norl:
