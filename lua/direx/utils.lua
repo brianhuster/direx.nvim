@@ -56,4 +56,9 @@ function M.parse_prg(prg, arg)
 	end, vim.split(prg, ' '))
 end
 
+function M.expandcmd(cmd)
+	local _, expanded = pcall(vim.fn.expandcmd, cmd)
+	return expanded
+end
+
 return M

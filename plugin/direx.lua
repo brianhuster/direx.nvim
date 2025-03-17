@@ -10,6 +10,9 @@ local api = vim.api
 local edit = vim.cmd.edit
 local au = api.nvim_create_autocmd
 
+---@module 'direx.utils'
+local utils = setmetatable({}, { __index = function(_, k) return require('direx.utils')[k] end })
+
 api.nvim_create_augroup('FileExplorer', { clear = true })
 
 if require('direx.config').default then
@@ -56,7 +59,7 @@ command('Direx', function(cmd)
 		local bufname = api.nvim_buf_get_name(0)
 		dir = #bufname > 0 and require('direx.fs').parent(bufname) or vim.fn.getcwd()
 	end
-	vim.cmd.edit(vim.fn.expandcmd(dir))
+	vim.cmd.edit(utils.expandcmd(dir))
 	require 'direx'.open(nil, dir)
 end, { nargs = '*' })
 
@@ -70,12 +73,12 @@ command('DirexLFind', function(cmd)
 end, { nargs = '+', bang = true, desc = 'Find files/folders <arg> in directory and its subdirectories, then open location window' })
 
 command('DirexGrep', function(cmd)
-	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
+	local pattern = utils.get_grep_pattern(cmd)
 	require 'direx'.grep(pattern, { dir = cmd.bang and get_dir() or nil })
 end, { nargs = '+', bang = true, desc = 'Grep <arg> in directory and its subdirectories, then open quickfix window' })
 
 command('DirexLGrep', function(cmd)
-	local pattern = require 'direx.utils'.get_grep_pattern(cmd)
+	local pattern = utils.get_grep_pattern(cmd)
 	require 'direx'.grep(pattern, { wintype = 'location', dir = cmd.bang and get_dir() or nil })
 end, { nargs = '+', bang = true, desc = 'Grep <arg> in directory and its subdirectories, then open location window' })
 
