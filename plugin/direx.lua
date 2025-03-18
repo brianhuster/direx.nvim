@@ -7,7 +7,6 @@ vim.g.loaded_direx = true
 local new_created_files = {}
 
 local api = vim.api
-local edit = vim.cmd.edit
 local au = api.nvim_create_autocmd
 
 ---@module 'direx.utils'
@@ -54,12 +53,13 @@ command('Direx', function(cmd)
 	local dir = cmd.args
 	if dir == '' then
 		if vim.bo.ft == 'direx' then
-			return edit()
+			return vim.cmd.edit()
 		end
 		local bufname = api.nvim_buf_get_name(0)
 		dir = #bufname > 0 and require('direx.fs').parent(bufname) or vim.fn.getcwd()
 	end
-	vim.cmd.edit(utils.expandcmd(dir))
+	dir = utils.expandcmd(dir)
+	vim.cmd.edit(dir)
 	require 'direx'.open(nil, dir)
 end, { nargs = '*' })
 

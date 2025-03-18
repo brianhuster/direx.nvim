@@ -24,7 +24,7 @@ of the |direx-commands| or |direx-mappings| that can do that.
 ==============================================================================
 CONFIGURATION                                           *direx-configuration*
 
-You can configure Direx using function `require('direx').setup(opts)`, with
+You can configure Direx using function `require('direx.config').set(opts)`, with
 opts being a table.
 
 The following options are available:
@@ -79,11 +79,12 @@ COMMANDS                                                    *direx-commands*
 GLOBAL ~
 
 Direx {dir}                                                *:Direx*
-
     Open a Direx buffer in {dir}.
 
     If {dir} is not provided, then reload the buffer if it is a Direx buffer,
     or open the parent directory of the current buffer otherwise.
+
+	Also expands |cmdline-special| in {dir}
 
 DirexFind {pattern}                                          *:DirexFind*
     Find files/directories matching {pattern} from the |current-directory|.

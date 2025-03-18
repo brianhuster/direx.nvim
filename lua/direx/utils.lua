@@ -52,13 +52,17 @@ end
 ---@return string[]
 function M.parse_prg(prg, arg)
 	return vim.tbl_map(function(v)
-		return (v == '' or v == '$*') and arg or vim.fn.expandcmd(v, { errmsg = false })
+		return (v == '' or v == '$*') and arg or M.expandcmd(v)
 	end, vim.split(prg, ' '))
 end
 
+---@param cmd string
+---@return string
 function M.expandcmd(cmd)
-	local _, expanded = pcall(vim.fn.expandcmd, cmd)
-	return expanded
+	vim.cmd(
+		([[ silent! let g:_direx_expanded_cmd = expandcmd(escape("%s", '"')) ]])
+		:format(cmd))
+	return vim.g._direx_expanded_cmd
 end
 
 return M
