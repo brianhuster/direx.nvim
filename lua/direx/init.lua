@@ -133,11 +133,14 @@ function M.shdo(fmt, dir, items)
 
 	for _, item in ipairs(items) do
 		local line = fmt:gsub('{([^}]*)}', function(mod)
-			return vim.fn.fnamemodify(item, mod:sub(2))
+			return vim.fn.fnamemodify(item, mod)
 		end)
 		vim.fn.append(vim.fn.line('$'), line)
 	end
 	vim.cmd.filetype 'detect'
+	local fname = vim.fn.tempname()
+	vim.cmd.saveas({ args = { fname }, bang = true })
+	vim.fn.setfperm(fname, 'rwx' .. vim.fn.getfperm(fname):sub(4))
 end
 
 ---@param path string
@@ -349,7 +352,7 @@ function M.fzf(cmd, opts)
 	local buf = vim.api.nvim_create_buf(false, false)
 	vim.api.nvim_set_current_buf(buf)
 	local fzfcmd = table.concat(utils.parse_prg(require('direx.config').fzfprg, cmd.args), ' ')
-	vim.fn.jobstart(fzfcmd .. ' > ' .. tempfile, {
+	vim.fn.jobstart((fzfcmd .. ' > ' .. tempfile) , {
 		term = true,
 		cwd = opts.dir,
 		on_exit = function(_, code)
