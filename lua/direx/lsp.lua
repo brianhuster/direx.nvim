@@ -7,7 +7,7 @@ function lsp.request(method, params)
 	end
 	for _, client in ipairs(clients) do
 		if client:supports_method(method) then
-			pcall(client.request, method, params, function(err, result)
+			client:request(method, params, function(err, result)
 				if result and result.changes then
 					vim.lsp.util.apply_workspace_edit(result, 'utf-8')
 				end
