@@ -49,7 +49,7 @@ local function get_dir()
 end
 
 command('Direx', function(cmd)
-	vim.w._direx_prev_bufname = vim.fn.expand '%'
+	vim.w._direx_prev_bufname = vim.fs.basename(vim.api.nvim_buf_get_name(0))
 	local dir = cmd.args
 	if dir == '' then
 		if vim.bo.ft == 'direx' then

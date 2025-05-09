@@ -254,7 +254,7 @@ function M.find(pattern, opts)
 	})
 	vim.cmd(opts.wintype == 'location' and 'lopen' or 'copen')
 	vim.b._direx = dir
-	vim.cmd.runtime 'syntax/direx.vim'
+	vim.cmd.runtime 'syntax/direx.lua'
 	vim.cmd.runtime 'ftplugin/direx_find.lua'
 end
 
