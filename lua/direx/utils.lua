@@ -7,24 +7,6 @@ function M.bufmap(mode, lhs, rhs, opts)
 	vim.keymap.set(mode, lhs, rhs, vim.tbl_extend('force', opts, { buffer = true }))
 end
 
-function M.add_icons()
-	local ns_id = vim.api.nvim_create_namespace('DirexIcons')
-	vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
-	local iconfunc = require('direx.config').iconfunc
-	if iconfunc then
-		---@type string[]
-		---@diagnostic disable-next-line: assign-type-mismatch
-		local paths = vim.fn.getline(1, '$')
-		for i, line in ipairs(paths) do
-			local dict = iconfunc(line)
-			vim.api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
-				virt_text = { { dict.icon, dict.hl } },
-				virt_text_pos = 'inline',
-			})
-		end
-	end
-end
-
 function M.get_grep_pattern(cmd)
 	if cmd.args then return cmd.args end
 	local pattern
@@ -52,17 +34,8 @@ end
 ---@return string[]
 function M.parse_prg(prg, arg)
 	return vim.tbl_map(function(v)
-		return (v == '' or v == '$*') and arg or M.expandcmd(v)
+		return (v == '' or v == '$*') and arg or vim.fn.expandcmd(v)
 	end, vim.split(prg, ' '))
-end
-
----@param cmd string
----@return string
-function M.expandcmd(cmd)
-	vim.cmd(
-		([[ silent! let g:_direx_expanded_cmd = expandcmd(escape("%s", '"')) ]])
-		:format(cmd))
-	return vim.g._direx_expanded_cmd
 end
 
 return M

@@ -11,8 +11,6 @@ local function feedkeys(key)
 	api.nvim_feedkeys(vim.keycode(key), 'n', true)
 end
 
-require('direx.utils').add_icons()
-
 local function get_lines_from_cmd_range(args)
 	return args.range > 0 and api.nvim_buf_get_lines(0, args.line1 - 1, args.line2, false) or nil
 end

@@ -50,15 +50,6 @@ bufcmd(buf, 'Trash', function(args)
 	dir.trash(lines, { confirm = args.bang == false })
 end, { range = true, bang = true, desc = 'Trash selected files and directories' })
 
-local augroup = vim.api.nvim_create_augroup('DirexBuf', { clear = true })
-vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedP', 'InsertLeave' }, {
-	buffer = buf,
-	group = augroup,
-	callback = function()
-		require('direx.utils').add_icons()
-	end
-})
-
 vim.b.undo_ftplugin = table.concat({
 	"setl bufhidden< buftype< swapfile<",
 	"silent! nunmap <CR> grn g?",

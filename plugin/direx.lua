@@ -58,7 +58,7 @@ command('Direx', function(cmd)
 		local bufname = api.nvim_buf_get_name(0)
 		dir = #bufname > 0 and require('direx.fs').parent(bufname) or vim.fn.getcwd()
 	end
-	dir = utils.expandcmd(dir)
+	dir = vim.fn.expandcmd(dir)
 	vim.cmd.edit(dir)
 	require 'direx'.open(nil, dir)
 end, { nargs = '*' })
