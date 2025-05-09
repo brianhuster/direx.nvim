@@ -8,7 +8,7 @@ function M.bufmap(mode, lhs, rhs, opts)
 end
 
 function M.add_icons()
-	local ns_id = vim.api.nvim_create_namespace('Direx')
+	local ns_id = vim.api.nvim_create_namespace('DirexIcons')
 	vim.api.nvim_buf_clear_namespace(0, ns_id, 0, -1)
 	local iconfunc = require('direx.config').iconfunc
 	if iconfunc then

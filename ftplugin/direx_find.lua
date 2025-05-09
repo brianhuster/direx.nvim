@@ -4,7 +4,7 @@ local bufmap = require('direx.utils').bufmap
 local bufcmd = api.nvim_buf_create_user_command
 
 vim.wo[0][0].conceallevel = 3
-vim.wo[0][0].concealcursor = 'nvc'
+vim.wo[0][0].concealcursor = 'nvic'
 vim.wo[0][0].wrap = false
 
 local function feedkeys(key)
