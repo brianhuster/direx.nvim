@@ -16,7 +16,7 @@ end
 vim.cmd.sort [[/^.*[/]/]]
 vim.fn.search([[\V\C\/]] .. vim.fn.escape(vim.w._direx_prev_bufname, '\\') .. [[\/\=\$]], 'cw')
 
-bufmap('n', '<CR>', function() vim.cmd.edit(api.nvim_get_current_line()) end,
+bufmap('n', '<CR>', function() vim.cmd.edit(vim.fn.fnameescape(api.nvim_get_current_line())) end,
 	{ desc = 'Open file or directory under cursor' })
 bufmap('n', 'grn', function() dir.rename() end, { desc = 'Rename path under cursor' })
 bufmap('n', 'g?', '<cmd>help direx-mappings<CR>')
