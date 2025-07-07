@@ -371,7 +371,7 @@ function M.fzf(cmd, opts)
 		vim.fn.jobstop(vim.bo.channel)
 		vim.api.nvim_set_current_buf(prev_buf)
 		vim.api.nvim_buf_delete(buf, { force = true })
-	end)
+	end, { buffer = buf })
 end
 
 return M
