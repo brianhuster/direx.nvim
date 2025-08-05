@@ -15,6 +15,7 @@ if iconfunc then
 		api.nvim_buf_set_extmark(0, ns_id, i - 1, 0, {
 			virt_text = { { dict.icon, dict.hl } },
 			virt_text_pos = 'inline',
+			invalidate = true
 		})
 	end
 end
